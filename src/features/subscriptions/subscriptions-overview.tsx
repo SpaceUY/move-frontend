@@ -23,12 +23,12 @@ export function SubscriptionsOverview({ model }: SubscriptionsOverviewProps) {
       {model.performance ? (
         <PerformancePlanCard plan={model.performance} upcoming={model.upcoming} />
       ) : (
-        <AutoDebitLine service="performance" paidUntil={null} />
+        <AutoDebitLine service="performance" paidUntil={null} standalone />
       )}
       {model.recoveryPacks.length > 0 ? (
         <RecoveryPacksCard packs={model.recoveryPacks} />
       ) : (
-        <AutoDebitLine service="recovery" paidUntil={null} />
+        <AutoDebitLine service="recovery" paidUntil={null} standalone />
       )}
     </div>
   );

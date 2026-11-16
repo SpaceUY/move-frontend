@@ -8,9 +8,15 @@ import type {
 } from "@/lib/api/types";
 
 vi.mock("@/features/auto-debits", () => ({
-  AutoDebitLine: ({ service, paidUntil }: { service: string; paidUntil: string | null }) => (
-    <p>{`debit line ${service} until ${String(paidUntil)}`}</p>
-  ),
+  AutoDebitLine: ({
+    service,
+    paidUntil,
+    standalone = false,
+  }: {
+    service: string;
+    paidUntil: string | null;
+    standalone?: boolean;
+  }) => <p data-standalone={String(standalone)}>{`debit line ${service} until ${String(paidUntil)}`}</p>,
 }));
 
 import { presentSubscriptions } from "./present-subscriptions";
@@ -271,6 +277,13 @@ describe("SubscriptionsOverview", () => {
 
     expect(screen.getByText("debit line performance until null")).toBeDefined();
     expect(screen.getByText("debit line recovery until null")).toBeDefined();
+  });
+
+  it("asks the debit line to draw its own card only when there is no plan card for it", () => {
+    renderOverview({ performance: activePlan });
+
+    expect(screen.getByText("debit line performance until 2026-11-15").dataset.standalone).toBe("false");
+    expect(screen.getByText("debit line recovery until null").dataset.standalone).toBe("true");
   });
 
   it("does not repeat a line the card already has", () => {
