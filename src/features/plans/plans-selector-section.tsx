@@ -22,27 +22,32 @@ function PlansMessage({ children }: { children: string }) {
   );
 }
 
-function ServiceCard({
-  service,
-  result,
-  reserveHref,
-}: {
-  service: SelectorService;
-  result: PromiseSettledResult<PlanDto[]>;
-  reserveHref?: PresentPlanOptions["reserveHref"];
-}) {
-  const { label, ...copy } = SELECTOR_SERVICES[service];
+type ServiceEntry =
+  | { service: SelectorService; failed: true }
+  | { service: SelectorService; failed: false; options: ReturnType<typeof presentSelectorPlans> };
 
-  if (result.status === "rejected") {
+function ServiceCard({ entry }: { entry: ServiceEntry }) {
+  const { label, ...copy } = SELECTOR_SERVICES[entry.service];
+
+  if (entry.failed) {
     return <PlansMessage>{`No pudimos cargar los planes de ${label}. Probá de nuevo en unos minutos.`}</PlansMessage>;
   }
 
-  const options = presentSelectorPlans(service, result.value, { reserveHref });
-  if (options.length === 0) {
-    return <PlansMessage>{`Todavía no hay planes de ${label} publicados.`}</PlansMessage>;
-  }
+  return <PlanSelector id={entry.service} label={label} {...copy} options={entry.options} />;
+}
 
-  return <PlanSelector id={service} label={label} {...copy} options={options} />;
+// A service with no published plans gets no card; a failed load keeps its message.
+function toServiceEntries(
+  results: PromiseSettledResult<PlanDto[]>[],
+  reserveHref?: PresentPlanOptions["reserveHref"],
+): ServiceEntry[] {
+  return SERVICE_ORDER.flatMap((service, index): ServiceEntry[] => {
+    const result = results[index];
+    if (result.status === "rejected") return [{ service, failed: true }];
+
+    const options = presentSelectorPlans(service, result.value, { reserveHref });
+    return options.length > 0 ? [{ service, failed: false, options }] : [];
+  });
 }
 
 export function PlansSelectorSection({ className, reserveHref }: PlansSelectorSectionProps) {
@@ -59,10 +64,23 @@ export async function PlansSelectorList({ className, reserveHref }: PlansSelecto
   // One service failing must not hide the other, so each is settled on its own.
   const results = await Promise.allSettled(SERVICE_ORDER.map((service) => getPlans(service)));
 
+  const entries = toServiceEntries(results, reserveHref);
+
+  if (entries.length === 0) {
+    return (
+      <div className={cn("mx-auto w-full max-w-[34rem]", className)}>
+        <PlansMessage>Todavía no hay planes publicados.</PlansMessage>
+      </div>
+    );
+  }
+
+  // One card keeps the width of a column and sits in the middle.
+  const layout = entries.length > 1 ? "grid gap-6 md:grid-cols-2" : "mx-auto w-full max-w-[34rem]";
+
   return (
-    <div className={cn("grid gap-6 md:grid-cols-2", className)}>
-      {SERVICE_ORDER.map((service, index) => (
-        <ServiceCard key={service} service={service} result={results[index]} reserveHref={reserveHref} />
+    <div className={cn(layout, className)}>
+      {entries.map((entry) => (
+        <ServiceCard key={entry.service} entry={entry} />
       ))}
     </div>
   );

@@ -95,14 +95,42 @@ describe("PlansSelectorList", () => {
     expect(screen.getByRole("radiogroup", { name: "Planes de Recovery" })).toBeDefined();
   });
 
-  it("says so when a service has no published plans", async () => {
+  it("shows two columns when both services have plans", async () => {
+    const { container } = render(await PlansSelectorList({}));
+
+    expect(container.firstElementChild?.className).toContain("md:grid-cols-2");
+  });
+
+  it("hides the card of a service with no published plans and centers the other", async () => {
     getPlansMock.mockImplementation(async (service) =>
       service === "recovery" ? [] : catalog.performance,
     );
 
+    const { container } = render(await PlansSelectorList({}));
+
+    expect(screen.queryByText(/Todavía no hay planes/)).toBeNull();
+    expect(screen.queryByRole("radiogroup", { name: "Planes de Recovery" })).toBeNull();
+    expect(screen.getByRole("radiogroup", { name: "Planes de Performance" })).toBeDefined();
+    expect(container.firstElementChild?.className).not.toContain("md:grid-cols-2");
+    expect(container.firstElementChild?.className).toContain("mx-auto");
+  });
+
+  it("keeps the load error of a failed service even when the other has no plans", async () => {
+    getPlansMock.mockImplementation(async (service) => {
+      if (service === "performance") throw new TypeError("fetch failed");
+      return [];
+    });
+
     render(await PlansSelectorList({}));
 
-    expect(screen.getByText("Todavía no hay planes de Recovery publicados.")).toBeDefined();
-    expect(screen.getByRole("radiogroup", { name: "Planes de Performance" })).toBeDefined();
+    expect(screen.getByText(/No pudimos cargar los planes de Performance/)).toBeDefined();
+  });
+
+  it("says so once when no service has published plans", async () => {
+    getPlansMock.mockResolvedValue([]);
+
+    render(await PlansSelectorList({}));
+
+    expect(screen.getAllByText("Todavía no hay planes publicados.")).toHaveLength(1);
   });
 });
