@@ -20,7 +20,7 @@ export const SEEDED_CHARGE_IDS = {
 
 export const OFFLINE_CHARGE_LIMIT = 2;
 export const BOOKING_WINDOW_DAYS = 30;
-export const RECEIPT_MAX_BYTES = 5 * 1024 * 1024;
+export const RECEIPT_MAX_BYTES = 1 * 1024 * 1024;
 export const RECEIPT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
 
 export const E2E_STAFF_PERSON: StaffPersonDto = { id: "staff-e2e", name: "Lucía Gómez" };

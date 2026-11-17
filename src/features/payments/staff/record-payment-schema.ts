@@ -4,13 +4,13 @@ import type { OfflineChargeDto, OfflinePaymentMethod } from "@/lib/api/types";
 import { formatAmountInput, parseOfflineAmount } from "./offline-amount";
 import type { RecordOfflinePaymentInput } from "./offline-charges-api";
 
-export const RECEIPT_MAX_BYTES = 5 * 1024 * 1024;
+export const RECEIPT_MAX_BYTES = 1 * 1024 * 1024;
 export const RECEIPT_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,application/pdf";
 export const NOTE_MAX_LENGTH = 280;
 // How far back staff can date a payment, so a closed month is not changed by a late entry.
 export const MAX_PAYMENT_DAYS_BACK = 30;
 
-export const RECEIPT_TOO_BIG_ERROR = "El comprobante no puede pesar más de 5 MB.";
+export const RECEIPT_TOO_BIG_ERROR = "El comprobante no puede pesar más de 1 MB.";
 export const RECEIPT_TYPE_ERROR = "El comprobante tiene que ser una foto (JPG, PNG, WEBP o HEIC) o un PDF.";
 export const FUTURE_DATE_ERROR = "La fecha del pago no puede ser futura.";
 export const TOO_OLD_DATE_ERROR = `La fecha no puede ser de hace más de ${MAX_PAYMENT_DAYS_BACK} días.`;

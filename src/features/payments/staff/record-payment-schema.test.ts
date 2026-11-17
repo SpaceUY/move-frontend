@@ -52,7 +52,7 @@ describe("parseRecordPayment", () => {
     [
       "a big receipt",
       { receipt: new File([new Uint8Array(RECEIPT_MAX_BYTES + 1)], "c.pdf", { type: "application/pdf" }) },
-      { receipt: "El comprobante no puede pesar más de 5 MB." },
+      { receipt: "El comprobante no puede pesar más de 1 MB." },
     ],
     [
       "a foreign receipt",
@@ -88,7 +88,11 @@ describe("parseRecordPayment", () => {
     expect(parseRecordPayment({ ...VALID, receipt }, TODAY).ok).toBe(true);
   });
 
-  it("accepts a file of exactly 5 MB", () => {
+  it("fixes the limit at 1 MB", () => {
+    expect(RECEIPT_MAX_BYTES).toBe(1024 * 1024);
+  });
+
+  it("accepts a file of exactly 1 MB", () => {
     const receipt = new File([new Uint8Array(RECEIPT_MAX_BYTES)], "c.png", { type: "image/png" });
 
     expect(parseRecordPayment({ ...VALID, receipt }, TODAY).ok).toBe(true);

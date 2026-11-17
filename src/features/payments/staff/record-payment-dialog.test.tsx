@@ -82,7 +82,7 @@ describe("RecordPaymentDialog", () => {
     expect(date.value).toBe("2026-11-02");
     expect(date.max).toBe("2026-11-02");
     expect(screen.getByPlaceholderText("Ej.: transferencia desde la cuenta de la madre")).toBeDefined();
-    expect(screen.getByText("Foto o PDF, máximo 5 MB.")).toBeDefined();
+    expect(screen.getByText("Foto o PDF, máximo 1 MB.")).toBeDefined();
     expect(screen.getByRole("button", { name: "Confirmar pago" })).toBeDefined();
     await waitFor(() => expect(receiptField().disabled).toBe(false));
   });
@@ -212,9 +212,9 @@ describe("RecordPaymentDialog", () => {
     renderDialog();
     await waitFor(() => expect(receiptField().disabled).toBe(false));
 
-    await user.upload(receiptField(), new File([new Uint8Array(5 * 1024 * 1024 + 1)], "grande.pdf", { type: "application/pdf" }));
+    await user.upload(receiptField(), new File([new Uint8Array(1024 * 1024 + 1)], "grande.pdf", { type: "application/pdf" }));
     await user.click(screen.getByRole("button", { name: "Confirmar pago" }));
-    expect(screen.getByText("El comprobante no puede pesar más de 5 MB.")).toBeDefined();
+    expect(screen.getByText("El comprobante no puede pesar más de 1 MB.")).toBeDefined();
 
     await user.upload(receiptField(), new File(["x"], "nota.txt", { type: "text/plain" }));
     await user.click(screen.getByRole("button", { name: "Confirmar pago" }));
@@ -226,7 +226,7 @@ describe("RecordPaymentDialog", () => {
   });
 
   it.each([
-    [413, "RECEIPT_TOO_LARGE", "El comprobante no puede pesar más de 5 MB."],
+    [413, "RECEIPT_TOO_LARGE", "El comprobante no puede pesar más de 1 MB."],
     [415, "RECEIPT_TYPE_NOT_ALLOWED", "El comprobante tiene que ser una foto (JPG, PNG, WEBP o HEIC) o un PDF."],
   ])("puts a %d under the receipt field", async (status, code, copy) => {
     recordMock.mockRejectedValue(apiError(status, code));
@@ -321,7 +321,7 @@ describe("RecordPaymentDialog", () => {
   });
 
   it.each([
-    [413, "El comprobante no puede pesar más de 5 MB."],
+    [413, "El comprobante no puede pesar más de 1 MB."],
     [415, "El comprobante tiene que ser una foto (JPG, PNG, WEBP o HEIC) o un PDF."],
   ])("maps a %d by status when a proxy answered without JSON", async (status, copy) => {
     recordMock.mockRejectedValue(apiError(status, "UNKNOWN", "Request Entity Too Large"));
