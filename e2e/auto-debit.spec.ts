@@ -11,7 +11,7 @@ import { setOwner, setScenario } from "./support/use-scenario";
 const API = `http://localhost:${Number(process.env.E2E_API_PORT ?? 4300)}/api/v1`;
 const MENSUAL_CHECKOUT = `/checkout/plan/${E2E_PLAN_IDS.mensual}`;
 const ACTIVATE_LABEL = "Activar débito automático";
-const LINE_TEXT = "Débito automático activo · próximo cobro 12/11";
+const TITLE_TEXT = "Débito automático activo";
 const BLOCK_TEXT = "Ya tenés débito automático activo para Performance.";
 const PROVIDER_CANCEL_ERROR =
   "No pudimos cancelar el débito en Mercado Pago. Sigue activo: probá de nuevo en unos minutos.";
@@ -84,21 +84,25 @@ test.describe("Automatic debit", () => {
 
     await result.getByRole("link", { name: "Ir a mi perfil" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByText(LINE_TEXT)).toBeVisible();
+    await expect(page.getByText(TITLE_TEXT, { exact: true })).toBeVisible();
 
     await page.goto(MENSUAL_CHECKOUT);
     await expect(page.getByText(BLOCK_TEXT)).toBeVisible();
     await expect(page.getByRole("button", { name: "Pagar con Mercado Pago" })).toHaveCount(0);
     await page.getByRole("link", { name: "Gestionarlo en mi perfil" }).click();
 
-    await expect(page.getByText(LINE_TEXT)).toBeVisible();
+    await expect(page.getByText(TITLE_TEXT, { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Cancelar débito" }).click();
     await expect(page.getByText("¿Cancelar el débito automático?")).toBeVisible();
     await expect(page.getByText("Lo que ya pagaste sigue vigente hasta el 15/11/2026.")).toBeVisible();
     await page.getByRole("button", { name: "Sí, cancelar débito" }).click();
 
-    await expect(page.getByText("Débito automático cancelado.")).toBeVisible();
-    await expect(page.getByText(LINE_TEXT)).toHaveCount(0);
+    // Two elements carry this text: the success snackbar's title and the grey line left in the card.
+    await expect(page.getByText("Débito automático cancelado.", { exact: true })).toHaveCount(2);
+    await expect(
+      page.getByRole("status").filter({ hasText: "Lo que ya pagaste sigue vigente hasta el 15/11/2026." }),
+    ).toBeVisible();
+    await expect(page.getByText(TITLE_TEXT, { exact: true })).toHaveCount(0);
     await expect(page.getByText("¿Cancelar el débito automático?")).toHaveCount(0);
   });
 
@@ -106,13 +110,13 @@ test.describe("Automatic debit", () => {
     await actAs(page, baseURL!, "auto-debit-provider-down");
 
     await page.goto("/dashboard");
-    await expect(page.getByText(LINE_TEXT)).toBeVisible();
+    await expect(page.getByText(TITLE_TEXT, { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Cancelar débito" }).click();
     await page.getByRole("button", { name: "Sí, cancelar débito" }).click();
 
     // The error is a snackbar: its text comes with an icon and a close button around it.
     await expect(page.getByRole("alert").filter(withText)).toContainText(PROVIDER_CANCEL_ERROR);
-    await expect(page.getByText(LINE_TEXT)).toBeVisible();
+    await expect(page.getByText(TITLE_TEXT, { exact: true })).toBeVisible();
     await expect(page.getByText("¿Cancelar el débito automático?")).toBeVisible();
     await expect(page.getByRole("button", { name: "Sí, cancelar débito" })).toBeEnabled();
   });

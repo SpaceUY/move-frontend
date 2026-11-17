@@ -89,7 +89,7 @@ export function DesktopInboxControl() {
           role="dialog"
           aria-label="Notificaciones"
           tabIndex={-1}
-          className="absolute right-0 top-[calc(100%+8px)] z-50 flex max-h-[470px] w-[360px] flex-col rounded border border-line bg-card"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 flex max-h-[470px] w-[360px] flex-col rounded-lg border border-[#3a3a3a] bg-raised shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_rgba(0,0,0,0.85)]"
         >
           <div className="flex flex-none items-center justify-between border-b border-line px-4 py-3.5">
             <span className="text-[10px] font-bold uppercase tracking-[2.5px] text-muted">Notificaciones</span>

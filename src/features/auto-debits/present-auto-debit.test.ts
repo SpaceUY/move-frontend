@@ -26,20 +26,29 @@ describe("presentAutoDebitLine", () => {
   it("shows the active debit with the day and month of the next charge", () => {
     expect(presentAutoDebitLine([debit()], "performance")).toEqual({
       text: "Débito automático activo · próximo cobro 12/11",
+      title: "Débito automático activo",
+      detail: "Próximo cobro el 12/11",
+      tone: "active",
       canCancel: true,
       debitId: "debit-1",
     });
   });
 
   it("says it is activo without a date when the next charge is unknown", () => {
-    expect(presentAutoDebitLine([debit({ nextChargeOn: null })], "performance")?.text).toBe(
-      "Débito automático activo",
-    );
+    expect(presentAutoDebitLine([debit({ nextChargeOn: null })], "performance")).toMatchObject({
+      text: "Débito automático activo",
+      title: "Débito automático activo",
+      detail: null,
+      tone: "active",
+    });
   });
 
   it("shows a debit that still needs Mercado Pago authorization", () => {
     expect(presentAutoDebitLine([debit({ status: "pending", nextChargeOn: null })], "performance")).toEqual({
       text: "Débito automático pendiente de autorización",
+      title: "Débito automático pendiente de autorización",
+      detail: null,
+      tone: "pending",
       canCancel: true,
       debitId: "debit-1",
     });
