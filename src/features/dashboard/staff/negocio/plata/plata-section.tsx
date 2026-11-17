@@ -1,6 +1,6 @@
 import { SERVICE_LABELS } from "@/features/payments/staff";
 import type { MoneyStatsDto, ServiceType } from "@/lib/api/types";
-import { formatExactPrice } from "@/lib/money";
+import { formatPriceWithCents } from "@/lib/money";
 
 import { COMPARE_PARAMS, SERVICE_PARAMS, type DashboardParams } from "../../dashboard-params";
 import { ChartDataTable } from "../charts/chart-data-table";
@@ -36,7 +36,7 @@ const INFO = {
     `Cobrado por mes ÷ clientes activos. ${ACTIVE_CLIENT_INFO}`,
 } as const;
 
-const money = (metric: { current: number | null }) => (metric.current === null ? "—" : formatExactPrice(metric.current));
+const money = (metric: { current: number | null }) => (metric.current === null ? "—" : formatPriceWithCents(metric.current));
 
 // The API's `byService` does not take the service filter, so the split keeps only the service in the URL: the donut
 // then agrees with "Cobrado", which the API did filter.
@@ -106,7 +106,7 @@ export async function PlataSection({ params }: { params: DashboardParams }) {
           info={INFO.collected}
           value={money(stats.collected)}
           metric={stats.collected}
-          note={refunds > 0 ? `Devoluciones −${formatExactPrice(refunds)}` : undefined}
+          note={refunds > 0 ? `Devoluciones −${formatPriceWithCents(refunds)}` : undefined}
           {...kpi}
         />
         <KpiTile label="Promedio por día" info={INFO.perDay} value={money(stats.perDay)} metric={stats.perDay} {...kpi} />
@@ -146,8 +146,8 @@ export async function PlataSection({ params }: { params: DashboardParams }) {
             ]}
             rows={buckets.map((bucket) => [
               bucket.range,
-              ...services.map((service) => formatExactPrice(bucket.values[service] ?? 0)),
-              ...(previousName ? [bucket.previous === null ? "—" : formatExactPrice(bucket.previous)] : []),
+              ...services.map((service) => formatPriceWithCents(bucket.values[service] ?? 0)),
+              ...(previousName ? [bucket.previous === null ? "—" : formatPriceWithCents(bucket.previous)] : []),
             ])}
           />
         </NegocioCard>

@@ -33,9 +33,9 @@ function hoverChart(container: HTMLElement) {
 }
 
 describe("charts", () => {
-  it("formatValue prints money with its cents and whole pesos with none", () => {
+  it("formatValue prints money always with two decimals", () => {
     expect(formatValue(4958.06, VALUE_FORMATS.MONEY)).toBe("$ 4.958,06");
-    expect(formatValue(153700, VALUE_FORMATS.MONEY)).toBe("$ 153.700");
+    expect(formatValue(153700, VALUE_FORMATS.MONEY)).toBe("$ 153.700,00");
   });
 
   it("DonutChart draws the label as an image with one slice per part that has a value", () => {
