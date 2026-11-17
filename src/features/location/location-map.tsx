@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import { Map, Marker, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const MAP_CENTER: [number, number] = [-56.0787995, -34.8773036];
+// Pin del listado de MOVE en Google Maps (!3d/!4d del link): esquina de Máximo Tajes y Juan Pedro Beranger.
+const MAP_CENTER: [number, number] = [-56.0762192, -34.877308];
 
 // Next's bundler doesn't resolve MapLibre's own import.meta.url-based worker
 // lookup, so the worker fails to load (blank map, marker only) unless we
