@@ -5,7 +5,7 @@ import { useState } from "react";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from "@/components/ui/table";
 import type { StatsMetaDto } from "@/lib/api/types";
-import { formatExactPrice } from "@/lib/money";
+import { formatPriceWithCents } from "@/lib/money";
 import { cn } from "@/lib/cn";
 
 import type { CompareParam } from "../../dashboard-params";
@@ -107,7 +107,7 @@ export function MoneySplitCard({ byService, byMethod, comparison, compare }: Mon
                   {row.name}
                 </TableCell>
                 <TableCell align="right" className="py-2.5 pr-0 whitespace-nowrap tabular-nums">
-                  {formatExactPrice(row.amount)}
+                  {formatPriceWithCents(row.amount)}
                   <br />
                   <span className="text-[11px] text-muted">{formatShare(row.share)}</span>
                 </TableCell>
@@ -126,8 +126,8 @@ export function MoneySplitCard({ byService, byMethod, comparison, compare }: Mon
         columns={[text.column, "Cobrado", ...(previousName ? [`Cobrado en el ${previousName}`] : [])]}
         rows={rows.map((row) => [
           row.name,
-          formatExactPrice(row.amount),
-          ...(previousName ? [row.previousAmount === null ? "—" : formatExactPrice(row.previousAmount)] : []),
+          formatPriceWithCents(row.amount),
+          ...(previousName ? [row.previousAmount === null ? "—" : formatPriceWithCents(row.previousAmount)] : []),
         ])}
       />
     </NegocioCard>
