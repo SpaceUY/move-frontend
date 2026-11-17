@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { SectionCardHeader } from "@/components/ui/section-card-header";
+import { CalendarCheckIcon } from "@/components/ui/section-icons";
 import { useSnackbar } from "@/components/ui/snackbar";
 import { cn } from "@/lib/cn";
 import type { CalendarOption, CalendarStatus, ProfessionalCalendarStatus } from "@/lib/api/types";
@@ -30,10 +32,7 @@ export interface CalendarConnectionPanelProps {
 function CalendarCard({ badge, children }: { badge?: ReactNode; children: ReactNode }) {
   return (
     <Card padding="none">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-6 py-4">
-        <h2 className="text-base font-semibold">Google Calendar</h2>
-        {badge}
-      </div>
+      <SectionCardHeader icon={<CalendarCheckIcon />} title="Google Calendar" aside={badge} />
       <div className="space-y-4 p-6">
         {children}
         <CalendarRules />
