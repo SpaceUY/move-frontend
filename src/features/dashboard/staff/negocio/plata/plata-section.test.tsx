@@ -55,13 +55,13 @@ describe("PlataSection", () => {
     render(await PlataSection({ params: PARAMS }));
 
     const cobrado = screen.getByRole("heading", { name: "Cobrado" }).closest("article")!;
-    expect(within(cobrado).getByText("$ 120.000")).toBeDefined();
+    expect(within(cobrado).getByText("$ 120.000,00")).toBeDefined();
     expect(within(cobrado).getByText("▲ 20%")).toBeDefined();
     expect(within(cobrado).getByText(/vs período anterior/)).toBeDefined();
     const perDay = screen.getByRole("heading", { name: "Promedio por día" }).closest("article")!;
-    expect(within(perDay).getByText("$ 3.871")).toBeDefined();
+    expect(within(perDay).getByText("$ 3.871,00")).toBeDefined();
     const perClient = screen.getByRole("heading", { name: "Por cliente activo" }).closest("article")!;
-    expect(within(perClient).getByText("$ 2.400")).toBeDefined();
+    expect(within(perClient).getByText("$ 2.400,00")).toBeDefined();
     expect(within(perClient).getByText("por mes")).toBeDefined();
     expect(within(perClient).getByText("▼ 4%")).toBeDefined();
   });
@@ -97,7 +97,7 @@ describe("PlataSection", () => {
     expect(within(table).getAllByText("$ 100,10")).toHaveLength(3);
   });
 
-  it("shows a whole amount with no decimals: $ 153.700", async () => {
+  it("shows a whole amount with two decimals: $ 153.700,00", async () => {
     getMoneyStatsMock.mockResolvedValue({
       ...MONEY_STATS,
       collected: { current: 153700, previous: 100000, change: 20, changeUnit: "percent" },
@@ -106,14 +106,13 @@ describe("PlataSection", () => {
     render(await PlataSection({ params: PARAMS }));
 
     const cobrado = screen.getByRole("heading", { name: "Cobrado" }).closest("article")!;
-    expect(within(cobrado).getByText("$ 153.700")).toBeDefined();
-    expect(within(cobrado).queryByText(/,00/)).toBeNull();
+    expect(within(cobrado).getByText("$ 153.700,00")).toBeDefined();
   });
 
   it("shows refunds line only when there were refunds", async () => {
     getMoneyStatsMock.mockResolvedValue(MONEY_STATS);
     const { unmount } = render(await PlataSection({ params: PARAMS }));
-    expect(screen.getByText("Devoluciones −$ 3.500")).toBeDefined();
+    expect(screen.getByText("Devoluciones −$ 3.500,00")).toBeDefined();
     unmount();
 
     getMoneyStatsMock.mockResolvedValue({ ...MONEY_STATS, refunds: { ...MONEY_STATS.refunds, current: 0 } });
@@ -166,7 +165,7 @@ describe("PlataSection", () => {
     expect(within(card).getByRole("radio", { name: "Servicio" }).getAttribute("aria-checked")).toBe("true");
     const byService = within(card).getByRole("table", { name: "Cobrado por servicio" });
     expect(within(byService).getByText("Performance")).toBeDefined();
-    expect(within(byService).getByText("$ 72.000")).toBeDefined();
+    expect(within(byService).getByText("$ 72.000,00")).toBeDefined();
     expect(within(byService).getByText("60%")).toBeDefined();
     expect(within(byService).getAllByText("▲ 20%").length).toBeGreaterThan(0);
 
@@ -296,7 +295,7 @@ describe("PlataSection", () => {
 
     expect(
       await screen.findByRole("img", {
-        name: "Cobrado por semana del 1 oct 2026 al 31 oct 2026: $ 120.000 en total, ▲ 20% vs período anterior. Los datos exactos están en Ver datos.",
+        name: "Cobrado por semana del 1 oct 2026 al 31 oct 2026: $ 120.000,00 en total, ▲ 20% vs período anterior. Los datos exactos están en Ver datos.",
       }),
     ).toBeDefined();
   });
@@ -308,7 +307,7 @@ describe("PlataSection", () => {
 
     expect(
       await screen.findByRole("img", {
-        name: "Cobrado por semana del 1 oct 2026 al 31 oct 2026: $ 120.000 en total. Los datos exactos están en Ver datos.",
+        name: "Cobrado por semana del 1 oct 2026 al 31 oct 2026: $ 120.000,00 en total. Los datos exactos están en Ver datos.",
       }),
     ).toBeDefined();
   });

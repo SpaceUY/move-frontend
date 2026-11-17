@@ -19,3 +19,8 @@ export function formatExactPrice(amount: number): string {
   const format = Number.isInteger(amount) ? exactFormat : exactCentsFormat;
   return `$ ${format.format(amount)}`;
 }
+
+/** Always two decimals ("$ 372.660,00"), so a column of amounts reads the same whether or not it has cents. */
+export function formatPriceWithCents(amount: number): string {
+  return `$ ${exactCentsFormat.format(amount)}`;
+}

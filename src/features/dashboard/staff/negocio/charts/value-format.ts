@@ -1,4 +1,4 @@
-import { formatExactPrice } from "@/lib/money";
+import { formatPriceWithCents } from "@/lib/money";
 
 /**
  * How a chart prints its numbers. A name, not a function: the charts are Client Components and a function cannot
@@ -8,7 +8,7 @@ export const VALUE_FORMATS = { MONEY: "money", COUNT: "count" } as const;
 export type ValueFormat = (typeof VALUE_FORMATS)[keyof typeof VALUE_FORMATS];
 
 export function formatValue(value: number, format: ValueFormat): string {
-  return format === VALUE_FORMATS.MONEY ? formatExactPrice(value) : `${value}`;
+  return format === VALUE_FORMATS.MONEY ? formatPriceWithCents(value) : `${value}`;
 }
 
 /** Axis ticks are short: "$ 100k" would not fit under every column. */
