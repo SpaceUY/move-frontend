@@ -225,6 +225,62 @@ describe("SettingsForm", () => {
     expect(updateSettingsMock).not.toHaveBeenCalled();
   });
 
+  it("gives each section its own card, named by its title", () => {
+    renderWithSnackbar(<SettingsForm initialValues={initialValues} />);
+
+    for (const title of [
+      "Reservas y pagos",
+      "Seguimiento",
+      "Precios para reservar por fuera",
+      "Pagos en efectivo o transferencia",
+    ]) {
+      expect(screen.getByRole("heading", { name: title })).toBeDefined();
+      expect(screen.getByRole("group", { name: title })).toBeDefined();
+    }
+  });
+
+  it("lays the four prices out two by two and the other sections in three columns", () => {
+    renderWithSnackbar(<SettingsForm initialValues={initialValues} />);
+
+    const gridOf = (title: string) =>
+      screen.getByRole("group", { name: title }).querySelector("div.grid") as HTMLElement;
+
+    expect(gridOf("Precios para reservar por fuera").className).not.toContain("lg:grid-cols-3");
+    expect(gridOf("Seguimiento").className).toContain("lg:grid-cols-3");
+  });
+
+  it("marks as modified only the section that has unsaved edits", async () => {
+    renderWithSnackbar(<SettingsForm initialValues={initialValues} />);
+    const user = userEvent.setup();
+    const bookings = () => screen.getByRole("group", { name: "Reservas y pagos" });
+    const followup = () => screen.getByRole("group", { name: "Seguimiento" });
+
+    expect(screen.queryByText("Modificado")).toBeNull();
+
+    await user.clear(hoursField());
+    await user.type(hoursField(), "4");
+
+    expect(within(bookings()).getByText("Modificado")).toBeDefined();
+    expect(within(followup()).queryByText("Modificado")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Descartar" }));
+
+    expect(screen.queryByText("Modificado")).toBeNull();
+  });
+
+  it("drops the modified mark once the changes are saved", async () => {
+    updateSettingsMock.mockResolvedValue({
+      ok: true,
+      values: { ...initialValues, cancelLimitHours: 4 },
+    });
+    renderWithSnackbar(<SettingsForm initialValues={initialValues} />);
+
+    await changeHoursTo("4");
+
+    await screen.findByText("Cambios guardados.");
+    expect(screen.queryByText("Modificado")).toBeNull();
+  });
+
   it("shows the API range error under the field", async () => {
     updateSettingsMock.mockResolvedValue({
       ok: false,
