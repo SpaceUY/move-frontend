@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import { Map, Marker, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const MAP_CENTER: [number, number] = [-56.0787995, -34.8773036];
+// Esquina Máximo Tajes y Beranger (el pin de Google Maps caía ~20 m al oeste, sobre Tajes).
+const MAP_CENTER: [number, number] = [-56.0786133, -34.8774295];
 
 // Next's bundler doesn't resolve MapLibre's own import.meta.url-based worker
 // lookup, so the worker fails to load (blank map, marker only) unless we
