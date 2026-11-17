@@ -41,7 +41,8 @@ export async function StaffSettingsContent({ searchParams }: { searchParams: Sea
       <StaffPageHeader title="Configuración" description={PAGE_DESCRIPTION} />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <SettingsForm initialValues={settings} />
-        <div className="space-y-4">
+        {/* Stays in view while the sections scroll; the cap keeps its tail reachable on a short screen. */}
+        <div className="space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
           {callback ? (
             <Notice
               tone={callback.tone === "error" ? "danger" : "success"}

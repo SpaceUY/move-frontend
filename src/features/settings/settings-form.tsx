@@ -1,11 +1,13 @@
 "use client";
 
-import { type FormEvent, useEffect, useId, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useInvalidFieldsFeedback } from "@/components/ui/form-feedback";
 import { Input } from "@/components/ui/input";
+import { SectionCardHeader } from "@/components/ui/section-card-header";
+import { BellIcon, CalendarIcon, TagIcon, WalletIcon } from "@/components/ui/section-icons";
 import { useSnackbar } from "@/components/ui/snackbar";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +39,12 @@ const INPUT_MODES = {
   text: undefined,
 } as const;
 const SECTIONS = Object.keys(SETTING_SECTIONS) as SettingSection[];
+const SECTION_ICONS: Record<SettingSection, ReactNode> = {
+  bookings: <CalendarIcon />,
+  followup: <BellIcon />,
+  offlinePrices: <TagIcon />,
+  offlinePayments: <WalletIcon />,
+};
 const TEXT_ROWS = 4;
 
 // A field that depends on a switch is hidden while the switch is off; what it holds stays.
@@ -45,9 +53,20 @@ function isShown(key: SettingKey, formValues: FormValues): boolean {
   return dependsOn === undefined || formValues[dependsOn] === "true";
 }
 
+function ModifiedTag() {
+  return (
+    <span className="inline-flex items-center rounded-sm border border-warning/35 bg-warning/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-warning">
+      Modificado
+    </span>
+  );
+}
+
 // A section with switch blocks has room for two columns, as in the mockup; the others fit three.
+// The four prices read better two by two than as three and one left over.
 const hasSwitchGroup = (section: SettingSection): boolean =>
   settingKeysOf(section).some((key) => SETTING_FIELDS[key].group !== undefined);
+const hasThreeColumns = (section: SettingSection): boolean =>
+  !hasSwitchGroup(section) && section !== "offlinePrices";
 
 // A decimal is shown the way it is typed in es-UY, with a comma; an empty value is an empty field.
 const toFormValues = (values: SettingsValues): FormValues => {
@@ -98,6 +117,8 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
 
   const savedFormValues = toFormValues(saved);
   const isDirty = SETTING_KEYS.some((key) => formValues[key] !== savedFormValues[key]);
+  const isSectionDirty = (section: SettingSection): boolean =>
+    settingKeysOf(section).some((key) => formValues[key] !== savedFormValues[key]);
 
   // Warn the user before leaving the page if there are unsaved changes. This covers
   // browser-level navigation: refresh, tab close, back button, direct URL entry.
@@ -239,65 +260,66 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
   }
 
   return (
-    <Card padding="none">
-      <form onSubmit={handleSubmit} noValidate aria-labelledby={formHeadingId}>
-        <h2 id={formHeadingId} className="sr-only">
-          Reglas del negocio
-        </h2>
-        <div className="p-6">
-          {SECTIONS.map((section, index) => {
-            const { title, description } = SETTING_SECTIONS[section];
-            return (
-              <fieldset
-                key={section}
-                className={cn(index > 0 && "mt-8 border-t border-line pt-8")}
-              >
-                <legend className="text-base font-semibold">{title}</legend>
-                <p className="mt-1 text-[13px] text-muted">{description}</p>
-                <div className={cn("mt-5 grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2", !hasSwitchGroup(section) && "lg:grid-cols-3")}>
-                  {settingKeysOf(section)
-                    .filter((key) => SETTING_FIELDS[key].dependsOn === undefined)
-                    .map((key) =>
-                      SETTING_FIELDS[key].kind === "boolean" ? renderSwitchGroup(key) : renderField(key),
-                    )}
-                </div>
-              </fieldset>
-            );
-          })}
-        </div>
-
-        <div className="sticky bottom-0 rounded-b border-t border-line-strong bg-raised px-6 py-4">
-          <div
-            className={cn(
-              "flex flex-wrap items-center gap-4",
-              isDirty ? "justify-between" : "justify-end",
-            )}
-          >
-            {isDirty ? (
-              <p className="flex items-center gap-2 text-sm font-medium">
-                <span className="size-2 shrink-0 rounded-full bg-warning" aria-hidden="true" />
-                Tenés cambios sin guardar
-              </p>
-            ) : null}
-            <div className="flex gap-3">
-              {isDirty ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  touchTarget
-                  disabled={isSubmitting}
-                  onClick={handleDiscard}
-                >
-                  Descartar
-                </Button>
-              ) : null}
-              <Button type="submit" touchTarget disabled={isSubmitting}>
-                {isSubmitting ? "Guardando…" : "Guardar cambios"}
-              </Button>
+    <form onSubmit={handleSubmit} noValidate aria-labelledby={formHeadingId} className="space-y-5">
+      <h2 id={formHeadingId} className="sr-only">
+        Reglas del negocio
+      </h2>
+      {SECTIONS.map((section) => {
+        const { title, description } = SETTING_SECTIONS[section];
+        const titleId = `${formHeadingId}-${section}`;
+        return (
+          <Card key={section} padding="none" role="group" aria-labelledby={titleId}>
+            <SectionCardHeader
+              icon={SECTION_ICONS[section]}
+              title={title}
+              titleId={titleId}
+              description={description}
+              aside={isSectionDirty(section) ? <ModifiedTag /> : null}
+            />
+            <div className="p-6">
+              <div className={cn("grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2", hasThreeColumns(section) && "lg:grid-cols-3")}>
+                {settingKeysOf(section)
+                  .filter((key) => SETTING_FIELDS[key].dependsOn === undefined)
+                  .map((key) =>
+                    SETTING_FIELDS[key].kind === "boolean" ? renderSwitchGroup(key) : renderField(key),
+                  )}
+              </div>
             </div>
+          </Card>
+        );
+      })}
+
+      <div className="sticky bottom-0 rounded border border-line-strong bg-raised px-6 py-4">
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-4",
+            isDirty ? "justify-between" : "justify-end",
+          )}
+        >
+          {isDirty ? (
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <span className="size-2 shrink-0 rounded-full bg-warning" aria-hidden="true" />
+              Tenés cambios sin guardar
+            </p>
+          ) : null}
+          <div className="flex gap-3">
+            {isDirty ? (
+              <Button
+                type="button"
+                variant="ghost"
+                touchTarget
+                disabled={isSubmitting}
+                onClick={handleDiscard}
+              >
+                Descartar
+              </Button>
+            ) : null}
+            <Button type="submit" touchTarget disabled={isSubmitting}>
+              {isSubmitting ? "Guardando…" : "Guardar cambios"}
+            </Button>
           </div>
         </div>
-      </form>
-    </Card>
+      </div>
+    </form>
   );
 }

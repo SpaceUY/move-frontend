@@ -60,6 +60,16 @@ beforeEach(() => {
 });
 
 describe("CalendarConnectionPanel", () => {
+  it.each([
+    ["disconnected", pro()],
+    ["needs_reconnect", pro({ status: "needs_reconnect" })],
+    ["connected", pro({ status: "connected", googleAccountEmail: "a@b.c", calendarId: "cal", calendarName: "Cal" })],
+  ])("titles the card Google Calendar when %s", (_state, professional) => {
+    renderWithSnackbar(<CalendarConnectionPanel initialStatus={statusWith(professional)} />);
+
+    expect(screen.getByRole("heading", { name: "Google Calendar" })).toBeDefined();
+  });
+
   it("shows a connect button when disconnected", () => {
     renderWithSnackbar(<CalendarConnectionPanel initialStatus={statusWith(pro())} />);
     expect(screen.getByRole("button", { name: "Conectar Google Calendar" })).toBeDefined();
