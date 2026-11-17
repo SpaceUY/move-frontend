@@ -119,7 +119,7 @@ test.describe("Offline charges in Pagos", () => {
     await expect(dialog.getByRole("radio", { name: "Efectivo" })).toHaveAttribute("aria-checked", "true");
     await expect(dialog.getByLabel("Monto")).toHaveValue("900");
     await expect(dialog.getByLabel("Fecha del pago")).toHaveValue(businessDateFromToday(0));
-    await expect(dialog.getByText("Foto o PDF, máximo 5 MB.")).toBeVisible();
+    await expect(dialog.getByText("Foto o PDF, máximo 1 MB.")).toBeVisible();
     const field = dialog.getByLabel(RECEIPT_FIELD);
     await expect(field).toBeEnabled();
     await field.setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: TINY_PNG });
@@ -135,7 +135,7 @@ test.describe("Offline charges in Pagos", () => {
     expect(posted[0]).toMatch(/^multipart\/form-data/);
   });
 
-  test("rejects a receipt over 5 MB before sending", async ({ page, baseURL }) => {
+  test("rejects a receipt over 1 MB before sending", async ({ page, baseURL }) => {
     await actAsStaff(page, baseURL!);
     const posted = paymentPosts(page);
     await page.goto(TO_COLLECT);
@@ -147,11 +147,11 @@ test.describe("Offline charges in Pagos", () => {
     await field.setInputFiles({
       name: "comprobante-grande.png",
       mimeType: "image/png",
-      buffer: Buffer.alloc(5 * 1024 * 1024 + 1),
+      buffer: Buffer.alloc(1024 * 1024 + 1),
     });
     await dialog.getByRole("button", { name: "Confirmar pago" }).click();
 
-    await expect(dialog.getByText("El comprobante no puede pesar más de 5 MB.")).toBeVisible();
+    await expect(dialog.getByText("El comprobante no puede pesar más de 1 MB.")).toBeVisible();
     await expect(dialog).toBeVisible();
     await expect(dialog.getByLabel("Monto")).toHaveValue("900");
     expect(posted).toHaveLength(0);
