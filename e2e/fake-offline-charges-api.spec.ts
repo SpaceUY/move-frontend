@@ -21,6 +21,7 @@ import type {
 import {
   businessDateFromToday,
   OFFLINE_PAID_IDS,
+  RECEIPT_MAX_BYTES,
   openSlotId,
   SEEDED_CHARGE_IDS,
   STAFF_BOOKING_CLIENT_IDS as IDS,
@@ -330,7 +331,7 @@ test.describe("fake API: staff booking and offline charges", () => {
 
     const tooBig = await request.post(path, {
       headers,
-      multipart: receiptForm(Buffer.alloc(5 * 1024 * 1024 + 1), "image/png"),
+      multipart: receiptForm(Buffer.alloc(1024 * 1024 + 1), "image/png"),
     });
     expect(tooBig.status()).toBe(413);
     expect(await tooBig.json()).toMatchObject({ code: "RECEIPT_TOO_LARGE" });
@@ -372,7 +373,7 @@ test.describe("fake API: staff booking and offline charges", () => {
     const on = await (await request.get(`${API}/staff/offline-charges/receipt-upload`, { headers: as("staff-booking") })).json();
     expect(on).toEqual({
       available: true,
-      maxBytes: 5242880,
+      maxBytes: RECEIPT_MAX_BYTES,
       allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"],
     });
 

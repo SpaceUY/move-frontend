@@ -45,7 +45,7 @@ const METHOD_OPTIONS: readonly SegmentedControlOption<MethodChoice>[] = [
   { value: "cash", label: PAYMENT_METHOD_LABELS.cash },
   { value: "transfer", label: PAYMENT_METHOD_LABELS.transfer },
 ];
-const RECEIPT_HELP = "Foto o PDF, máximo 5 MB.";
+const RECEIPT_HELP = "Foto o PDF, máximo 1 MB.";
 const RECEIPT_UNAVAILABLE = "Adjuntar comprobante no está disponible todavía.";
 const RECORDED_MESSAGE = "Pago registrado.";
 const RECORD_FAILED_MESSAGE = "No pudimos registrar el pago. Probá de nuevo.";

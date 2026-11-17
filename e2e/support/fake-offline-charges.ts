@@ -130,7 +130,7 @@ const DATE_IN_FUTURE = failure(400, "OFFLINE_PAYMENT_DATE_IN_FUTURE", "La fecha 
 const DATE_TOO_OLD = failure(400, "OFFLINE_PAYMENT_DATE_TOO_OLD", "La fecha no puede ser de hace más de 30 días.");
 const MAX_PAYMENT_DAYS_BACK = 30;
 const UPLOAD_UNAVAILABLE = failure(409, "RECEIPT_UPLOAD_UNAVAILABLE", "Adjuntar comprobante no está disponible todavía.");
-const RECEIPT_TOO_LARGE = failure(413, "RECEIPT_TOO_LARGE", "El comprobante no puede pesar más de 5 MB.");
+const RECEIPT_TOO_LARGE = failure(413, "RECEIPT_TOO_LARGE", "El comprobante no puede pesar más de 1 MB.");
 const RECEIPT_TYPE_NOT_ALLOWED = failure(
   415,
   "RECEIPT_TYPE_NOT_ALLOWED",
