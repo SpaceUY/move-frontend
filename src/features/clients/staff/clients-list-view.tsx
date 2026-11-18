@@ -38,7 +38,7 @@ const isDeactivated = (status: ClientAccountStatus) => status === CLIENT_ACCOUNT
 
 function countText(total: number, status: ClientAccountStatus, expiringSoon: boolean): string {
   if (expiringSoon) return total === 1 ? "1 cliente vence pronto." : `${total} clientes vencen pronto.`;
-  if (!isDeactivated(status)) return `${total} clientes registrados.`;
+  if (!isDeactivated(status)) return total === 1 ? "1 cliente activo." : `${total} clientes activos.`;
   return total === 1 ? "1 cliente dado de baja." : `${total} clientes dados de baja.`;
 }
 
@@ -129,6 +129,12 @@ function ClientTableRow({ client, status }: { client: ClientRow; status: ClientA
   );
 }
 
+// The "Activos" tab only holds clients with a plan or recent activity, so a search there says it looked only among them.
+function searchMissText(params: ClientsListParams): string {
+  const amongActive = !isDeactivated(params.status) && !params.expiringSoon;
+  return `No encontramos resultados para «${params.q}»${amongActive ? " entre los clientes activos" : ""}.`;
+}
+
 function ClientsEmptyState({ params, total }: { params: ClientsListParams; total: number }) {
   // A page number typed in the URL beyond the last one.
   if (total > 0) {
@@ -150,7 +156,7 @@ function ClientsEmptyState({ params, total }: { params: ClientsListParams; total
     return (
       <EmptyState
         title="Ningún cliente coincide con la búsqueda"
-        description={`No encontramos resultados para «${params.q}».`}
+        description={searchMissText(params)}
         action={
           <Link
             href={clientsListHref({ ...params, q: "", page: 1 })}
@@ -187,7 +193,7 @@ function ClientsEmptyState({ params, total }: { params: ClientsListParams; total
     );
   }
   return (
-    <EmptyState title="Todavía no hay clientes" description="Cuando alguien se registre en la web va a aparecer acá." />
+    <EmptyState title="No hay clientes activos" description="Cuando un cliente tenga un plan vigente va a aparecer acá." />
   );
 }
 
