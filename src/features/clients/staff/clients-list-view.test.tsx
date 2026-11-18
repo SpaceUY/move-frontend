@@ -41,7 +41,7 @@ describe("ClientsListView", () => {
       />,
     );
 
-    expect(screen.getByText("1 clientes registrados.")).toBeDefined();
+    expect(screen.getByText("1 cliente activo.")).toBeDefined();
     expect(screen.getByText("Ana Gomez")).toBeDefined();
     expect(screen.getByText("ana@move.uy")).toBeDefined();
     expect(screen.getByText("Presente")).toBeDefined();
@@ -51,7 +51,7 @@ describe("ClientsListView", () => {
   it("keeps the count of active clients above the list", () => {
     render(<ClientsListView params={ACTIVE} data={pageOf({ items: [rowOf()], total: 7 })} />);
 
-    const count = screen.getByText("7 clientes registrados.");
+    const count = screen.getByText("7 clientes activos.");
     expect(screen.getByRole("table").compareDocumentPosition(count) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
@@ -114,8 +114,14 @@ describe("ClientsListView", () => {
     render(<ClientsListView params={{ q: "xyz123", page: 1, status: "active", expiringSoon: false }} data={pageOf()} />);
 
     expect(screen.getByText("Ningún cliente coincide con la búsqueda")).toBeDefined();
-    expect(screen.getByText("No encontramos resultados para «xyz123».")).toBeDefined();
+    expect(screen.getByText("No encontramos resultados para «xyz123» entre los clientes activos.")).toBeDefined();
     expect(href("Ver todos")).toBe("/staff/clients");
+  });
+
+  it("does not say the search was among active clients when it was among the deactivated ones", () => {
+    render(<ClientsListView params={{ ...DEACTIVATED, q: "xyz123" }} data={pageOf()} />);
+
+    expect(screen.getByText("No encontramos resultados para «xyz123».")).toBeDefined();
   });
 
   it("shows its own empty state for the deactivated view", () => {
@@ -145,10 +151,11 @@ describe("ClientsListView", () => {
     expect(screen.getByText("3 clientes vencen pronto.")).toBeDefined();
   });
 
-  it("shows the first-use empty state when there are no clients at all", () => {
+  it("says there are no active clients, and what makes one, when the active list is empty", () => {
     render(<ClientsListView params={ACTIVE} data={pageOf()} />);
 
-    expect(screen.getByText("Todavía no hay clientes")).toBeDefined();
+    expect(screen.getByText("No hay clientes activos")).toBeDefined();
+    expect(screen.getByText("Cuando un cliente tenga un plan vigente va a aparecer acá.")).toBeDefined();
   });
 
   it("offers the first page when the URL names a page past the last one", () => {

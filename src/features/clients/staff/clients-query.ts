@@ -7,6 +7,8 @@ export interface ClientsQueryParams {
   pageSize?: number;
   status?: ClientAccountStatus;
   expiringSoon?: boolean;
+  // Only the clients active today (a plan in force or recent activity), the rule of the dashboard's "Clientes activos".
+  activeNow?: boolean;
 }
 
 export const CLIENTS_PATH = "/api/v1/staff/clients";
@@ -19,6 +21,7 @@ export function clientsListPath(params: ClientsQueryParams): string {
   if (params.pageSize) search.set("pageSize", String(params.pageSize));
   if (params.status === CLIENT_ACCOUNT_STATUSES.DEACTIVATED) search.set("status", params.status);
   if (params.expiringSoon) search.set("expiringSoon", "true");
+  if (params.activeNow) search.set("activeNow", "true");
   const qs = search.toString();
   return qs ? `${CLIENTS_PATH}?${qs}` : CLIENTS_PATH;
 }
