@@ -66,6 +66,22 @@ describe("staff clients API", () => {
     expect(apiFetchClientMock).toHaveBeenCalledWith("/api/v1/staff/clients?page=1&pageSize=20");
   });
 
+  it("asks for the clients active today with activeNow=true, next to the search and the page", async () => {
+    apiFetchClientMock.mockResolvedValue(Response.json(page([])));
+
+    await listClients({ q: "ana", page: 2, pageSize: 20, activeNow: true });
+
+    expect(apiFetchClientMock).toHaveBeenCalledWith("/api/v1/staff/clients?q=ana&page=2&pageSize=20&activeNow=true");
+  });
+
+  it("leaves activeNow out of the URL when it is false", async () => {
+    apiFetchClientMock.mockResolvedValue(Response.json(page([])));
+
+    await listClients({ page: 1, pageSize: 20, activeNow: false });
+
+    expect(apiFetchClientMock).toHaveBeenCalledWith("/api/v1/staff/clients?page=1&pageSize=20");
+  });
+
   it("lists deactivated clients with status=deactivated", async () => {
     apiFetchClientMock.mockResolvedValue(Response.json(page([])));
 
