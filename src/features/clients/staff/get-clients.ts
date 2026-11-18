@@ -1,5 +1,6 @@
 import { parseJsonOrThrow } from "@/lib/api/client";
 import { apiFetchServer } from "@/lib/api/server";
+import { CLIENT_ACCOUNT_STATUSES } from "@/lib/api/types";
 import type { ClientPage } from "@/lib/api/types";
 
 import { CLIENTS_PAGE_SIZE, type ClientsListParams } from "./clients-list-params";
@@ -14,6 +15,8 @@ export async function getClients(params: ClientsListParams): Promise<ClientPage>
       pageSize: CLIENTS_PAGE_SIZE,
       status: params.status,
       expiringSoon: params.expiringSoon,
+      // The "Activos" tab: not the deactivated list, and not "vence pronto" (which is already a subset of it).
+      activeNow: params.status === CLIENT_ACCOUNT_STATUSES.ACTIVE && !params.expiringSoon,
     }),
   );
   return parseJsonOrThrow<ClientPage>(response);

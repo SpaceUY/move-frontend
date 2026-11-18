@@ -17,12 +17,20 @@ describe("getClients", () => {
     apiFetchServerMock.mockReset();
   });
 
-  it("asks for the active list without a status, as the page size", async () => {
+  it("asks for the clients active today, without a status, as the page size", async () => {
     apiFetchServerMock.mockResolvedValue(Response.json(emptyPage));
 
     await getClients({ q: "", page: 1, status: "active", expiringSoon: false });
 
-    expect(apiFetchServerMock).toHaveBeenCalledWith("/api/v1/staff/clients?page=1&pageSize=20");
+    expect(apiFetchServerMock).toHaveBeenCalledWith("/api/v1/staff/clients?page=1&pageSize=20&activeNow=true");
+  });
+
+  it("does not ask for activeNow when the list is the deactivated one", async () => {
+    apiFetchServerMock.mockResolvedValue(Response.json(emptyPage));
+
+    await getClients({ q: "", page: 1, status: "deactivated", expiringSoon: false });
+
+    expect(apiFetchServerMock.mock.calls[0]?.[0]).not.toContain("activeNow");
   });
 
   it("sends the search, the page and the deactivated status", async () => {
