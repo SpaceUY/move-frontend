@@ -36,8 +36,10 @@ const DEACTIVATED_COLUMNS = ["Dado de baja"];
 
 const isDeactivated = (status: ClientAccountStatus) => status === CLIENT_ACCOUNT_STATUSES.DEACTIVATED;
 
-function countText(total: number, status: ClientAccountStatus, expiringSoon: boolean): string {
+function countText(total: number, params: ClientsListParams): string {
+  const { status, expiringSoon, everyone } = params;
   if (expiringSoon) return total === 1 ? "1 cliente vence pronto." : `${total} clientes vencen pronto.`;
+  if (everyone) return total === 1 ? "1 cliente registrado." : `${total} clientes registrados.`;
   if (!isDeactivated(status)) return total === 1 ? "1 cliente activo." : `${total} clientes activos.`;
   return total === 1 ? "1 cliente dado de baja." : `${total} clientes dados de baja.`;
 }
@@ -131,7 +133,7 @@ function ClientTableRow({ client, status }: { client: ClientRow; status: ClientA
 
 // The "Activos" tab only holds clients with a plan or recent activity, so a search there says it looked only among them.
 function searchMissText(params: ClientsListParams): string {
-  const amongActive = !isDeactivated(params.status) && !params.expiringSoon;
+  const amongActive = !isDeactivated(params.status) && !params.expiringSoon && !params.everyone;
   return `No encontramos resultados para «${params.q}»${amongActive ? " entre los clientes activos" : ""}.`;
 }
 
@@ -192,6 +194,11 @@ function ClientsEmptyState({ params, total }: { params: ClientsListParams; total
       />
     );
   }
+  if (params.everyone) {
+    return (
+      <EmptyState title="Todavía no hay clientes" description="Cuando alguien se registre en la web va a aparecer acá." />
+    );
+  }
   return (
     <EmptyState title="No hay clientes activos" description="Cuando un cliente tenga un plan vigente va a aparecer acá." />
   );
@@ -250,7 +257,7 @@ export function ClientsListView({ data, params }: { data: ClientPage; params: Cl
   const hasClients = data.items.length > 0;
   const showCountAbove = data.total > 0 && !isDeactivated(params.status);
   const showCountBelow = hasClients && isDeactivated(params.status);
-  const count = countText(data.total, params.status, params.expiringSoon);
+  const count = countText(data.total, params);
 
   return (
     <>

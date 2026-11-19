@@ -20,15 +20,23 @@ describe("getClients", () => {
   it("asks for the clients active today, without a status, as the page size", async () => {
     apiFetchServerMock.mockResolvedValue(Response.json(emptyPage));
 
-    await getClients({ q: "", page: 1, status: "active", expiringSoon: false });
+    await getClients({ q: "", page: 1, status: "active", expiringSoon: false, everyone: false });
 
     expect(apiFetchServerMock).toHaveBeenCalledWith("/api/v1/staff/clients?page=1&pageSize=20&activeNow=true");
+  });
+
+  it("asks for every client that is not deactivated, without activeNow, for the Todos tab", async () => {
+    apiFetchServerMock.mockResolvedValue(Response.json(emptyPage));
+
+    await getClients({ q: "", page: 1, status: "active", expiringSoon: false, everyone: true });
+
+    expect(apiFetchServerMock).toHaveBeenCalledWith("/api/v1/staff/clients?page=1&pageSize=20");
   });
 
   it("does not ask for activeNow when the list is the deactivated one", async () => {
     apiFetchServerMock.mockResolvedValue(Response.json(emptyPage));
 
-    await getClients({ q: "", page: 1, status: "deactivated", expiringSoon: false });
+    await getClients({ q: "", page: 1, status: "deactivated", expiringSoon: false, everyone: false });
 
     expect(apiFetchServerMock.mock.calls[0]?.[0]).not.toContain("activeNow");
   });
@@ -36,7 +44,7 @@ describe("getClients", () => {
   it("sends the search, the page and the deactivated status", async () => {
     apiFetchServerMock.mockResolvedValue(Response.json(emptyPage));
 
-    await getClients({ q: "ana", page: 2, status: "deactivated", expiringSoon: false });
+    await getClients({ q: "ana", page: 2, status: "deactivated", expiringSoon: false, everyone: false });
 
     expect(apiFetchServerMock).toHaveBeenCalledWith(
       "/api/v1/staff/clients?q=ana&page=2&pageSize=20&status=deactivated",
@@ -46,18 +54,18 @@ describe("getClients", () => {
   it("asks for the clients about to expire with expiringSoon=true", async () => {
     apiFetchServerMock.mockResolvedValue(Response.json(emptyPage));
 
-    await getClients({ q: "", page: 1, status: "active", expiringSoon: true });
+    await getClients({ q: "", page: 1, status: "active", expiringSoon: true, everyone: false });
 
     expect(apiFetchServerMock).toHaveBeenCalledWith("/api/v1/staff/clients?page=1&pageSize=20&expiringSoon=true");
   });
 
   it("returns the parsed page and throws the API error", async () => {
     apiFetchServerMock.mockResolvedValueOnce(Response.json(emptyPage));
-    await expect(getClients({ q: "", page: 1, status: "active", expiringSoon: false })).resolves.toEqual(emptyPage);
+    await expect(getClients({ q: "", page: 1, status: "active", expiringSoon: false, everyone: false })).resolves.toEqual(emptyPage);
 
     apiFetchServerMock.mockResolvedValueOnce(
       Response.json({ statusCode: 500, code: "INTERNAL_ERROR", message: "x" }, { status: 500 }),
     );
-    await expect(getClients({ q: "", page: 1, status: "active", expiringSoon: false })).rejects.toBeInstanceOf(ApiError);
+    await expect(getClients({ q: "", page: 1, status: "active", expiringSoon: false, everyone: false })).rejects.toBeInstanceOf(ApiError);
   });
 });
