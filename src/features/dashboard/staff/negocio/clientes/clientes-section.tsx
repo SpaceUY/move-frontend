@@ -5,22 +5,24 @@ import { SERVICE_LABELS } from "@/features/payments/staff";
 import type { ClientsStatsDto } from "@/lib/api/types";
 
 import { COMPARE_PARAMS, SERVICE_PARAMS, type DashboardParams } from "../../dashboard-params";
+import { cn } from "@/lib/cn";
 import { ServiceDot } from "../../service-dot";
 import { BarList } from "../charts/bar-list";
 import { ChartDataTable } from "../charts/chart-data-table";
 import { LazyLineWithBarsChart } from "../charts/lazy-charts";
 import { formatCount, formatShare } from "../charts/value-format";
-import { COMPARE_LABELS, formatChange } from "../format-change";
-import { bucketLabel, bucketRange, formatShortDate, seriesSpansYears } from "../format-date";
+import { bucketLabel, bucketRange, formatShortDate, seriesSpansYears, yearOf } from "../format-date";
 import { ACTIVE_CLIENT_INFO } from "../info-texts";
 import { KpiTile } from "../kpi-tile";
 import { loadStats } from "../load-stats";
 import { NegocioCard } from "../negocio-card";
 import { NegocioInvalidRange, NegocioSectionError } from "../negocio-section-error";
-import { PeriodNote } from "../period-note";
-import { GRANULARITY_LABELS, GranularityLinks } from "../plata/granularity-links";
+import { GRANULARITY_LABELS } from "../plata/granularity-links";
 import { SERVICE_COLORS } from "../services";
 import { getClientsStats } from "./get-clients-stats";
+import { formatRangeDelta } from "./range-delta";
+
+const TONE_CLASS = { up: "text-success", down: "text-danger", neutral: "text-muted" } as const;
 
 const GRANULARITY_NOUNS = { day: "día", week: "semana", month: "mes" } as const;
 
@@ -76,11 +78,12 @@ export async function ClientesSection({ params }: { params: DashboardParams }) {
   const { stats } = load;
 
   const { meta } = stats;
-  const hasComparison = meta.comparison?.hasData === true;
-  const previousName = hasComparison && params.compare !== COMPARE_PARAMS.NONE ? COMPARE_LABELS[params.compare] : null;
   const noun = GRANULARITY_NOUNS[meta.granularity];
   const spansYears = seriesSpansYears(stats.series);
-  const kpi = { comparison: meta.comparison, compare: params.compare };
+  // The tiles carry no comparison of their own: the only delta is the one of today's active clients, in its note.
+  const kpi = { comparison: null, compare: COMPARE_PARAMS.NONE };
+  const delta = formatRangeDelta(stats.active, meta.comparison, params.clientsRange);
+  const withYear = yearOf(meta.period.from) !== yearOf(meta.period.to);
   const serviceSuffix = params.service === SERVICE_PARAMS.ALL ? "" : ` · ${SERVICE_LABELS[params.service]}`;
   const { renewal } = stats;
 
@@ -88,13 +91,14 @@ export async function ClientesSection({ params }: { params: DashboardParams }) {
     label: bucketLabel(point.from, meta.granularity, spansYears),
     inProgress: point.inProgress,
     line: point.active,
-    previousLine: hasComparison ? point.previousActive : null,
+    previousLine: null,
     up: point.joins,
     down: point.leaves,
     downPending: point.leavesPending,
   }));
-  const change = formatChange(stats.active, meta.comparison, false, params.compare).text;
-  const conclusion = [`${formatCount(stats.active.current)} al final`, change === "—" ? "" : change].filter(Boolean).join(", ");
+  const conclusion = [`${formatCount(stats.active.current)} al final`, delta ? `${delta.figure} ${delta.context}` : ""]
+    .filter(Boolean)
+    .join(", ");
   const chartLabel = `Clientes activos por ${noun} del ${formatShortDate(meta.period.from, true)} al ${formatShortDate(meta.period.to, true)}: ${conclusion}. Los datos exactos están en Ver datos.`;
 
   // Rehab has no plans, so it never has a renewal: it is left out even if the API were to send it.
@@ -104,15 +108,27 @@ export async function ClientesSection({ params }: { params: DashboardParams }) {
 
   return (
     <div className="grid gap-4">
-      <PeriodNote meta={meta} source="clientes" />
+      <p className="text-xs text-muted">
+        {`${formatShortDate(meta.period.from, withYear)} – ${formatShortDate(meta.period.to, withYear)} · Clientes con plan o reserva suelta ese día`}
+      </p>
       <h2 className="m-0 font-display text-lg font-extrabold lg:text-[22px]">{`¿Crecemos o perdemos gente, y por qué?${serviceSuffix}`}</h2>
       <div className="grid gap-4 lg:grid-cols-3">
         <KpiTile
-          label="Clientes activos"
+          label="Clientes activos hoy"
           info={INFO.active}
           value={formatCount(stats.active.current)}
           metric={stats.active}
-          note={leavesNote(stats)}
+          note={
+            <>
+              {leavesNote(stats)}
+              {delta ? (
+                <>
+                  {" · "}
+                  <span className={cn(TONE_CLASS[delta.tone])}>{delta.figure}</span> <span>{delta.context}</span>
+                </>
+              ) : null}
+            </>
+          }
           {...kpi}
         />
         <KpiTile
@@ -135,11 +151,8 @@ export async function ClientesSection({ params }: { params: DashboardParams }) {
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="min-w-0 lg:col-span-2">
-          <NegocioCard
-            title={`Activos, altas y bajas por ${noun}`}
-            action={<GranularityLinks params={params} current={meta.granularity} options={meta.granularityOptions} />}
-          >
-            <LazyLineWithBarsChart label={chartLabel} points={points} previousName={previousName} />
+          <NegocioCard title={`Activos, altas y bajas por ${noun}`}>
+            <LazyLineWithBarsChart label={chartLabel} points={points} previousName={null} />
             <ChartDataTable
               caption={`Activos, altas y bajas por ${noun}`}
               columns={[
@@ -148,7 +161,6 @@ export async function ClientesSection({ params }: { params: DashboardParams }) {
                 "Altas",
                 "Bajas",
                 "Bajas en curso",
-                ...(previousName ? [`Activos del ${previousName}`] : []),
               ]}
               rows={stats.series.map((point) => [
                 `${bucketRange(point, spansYears)}${point.inProgress ? " (en curso)" : ""}`,
@@ -156,7 +168,6 @@ export async function ClientesSection({ params }: { params: DashboardParams }) {
                 point.joins,
                 point.leaves,
                 point.leavesPending,
-                ...(previousName ? [point.previousActive === null ? "—" : point.previousActive] : []),
               ])}
             />
           </NegocioCard>
