@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { dashboardHref, parseDashboardParams, toStatsQuery, type DashboardParams } from "./dashboard-params";
+import {
+  dashboardHref,
+  parseDashboardParams,
+  toClientsStatsQuery,
+  toStatsQuery,
+  type DashboardParams,
+} from "./dashboard-params";
 
 const DEFAULTS: DashboardParams = {
   view: "hoy",
@@ -11,6 +17,7 @@ const DEFAULTS: DashboardParams = {
   compare: "anterior",
   service: "todos",
   granularity: null,
+  clientsRange: "6-meses",
 };
 
 describe("parseDashboardParams", () => {
@@ -39,6 +46,7 @@ describe("parseDashboardParams", () => {
       compare: "anio-pasado",
       service: "rehab",
       granularity: "semana",
+      clientsRange: "6-meses",
     });
     expect(dashboardHref(params)).toBe(
       "/staff?vista=negocio&tab=turnos&periodo=este-anio&comparar=anio-pasado&servicio=rehab&agrupar=semana",
@@ -93,6 +101,59 @@ describe("parseDashboardParams", () => {
 
   it("drops the Negocio filters from the href of the Hoy view", () => {
     expect(dashboardHref({ ...DEFAULTS, tab: "clientes", service: "rehab" })).toBe("/staff");
+  });
+});
+
+describe("clients range", () => {
+  it("rango defaults to 6-meses and ignores unknown values", () => {
+    expect(parseDashboardParams({ rango: "xx" }).clientsRange).toBe("6-meses");
+    expect(parseDashboardParams({}).clientsRange).toBe("6-meses");
+    expect(parseDashboardParams({ rango: "todo" }).clientsRange).toBe("todo");
+  });
+
+  it("dashboardHref omits rango when it is the default and writes it otherwise", () => {
+    const all = parseDashboardParams({ vista: "negocio", tab: "clientes", rango: "todo" });
+    expect(dashboardHref(all)).toContain("rango=todo");
+    const sixMonths = parseDashboardParams({ vista: "negocio", tab: "clientes", rango: "6-meses" });
+    expect(dashboardHref(sixMonths)).not.toContain("rango");
+  });
+
+  it("keeps rango when the tab changes", () => {
+    const params = parseDashboardParams({ vista: "negocio", tab: "clientes", rango: "3-meses" });
+    expect(dashboardHref({ ...params, tab: "plata" })).toContain("rango=3-meses");
+  });
+});
+
+describe("toClientsStatsQuery", () => {
+  it("maps each range", () => {
+    expect(toClientsStatsQuery({ ...DEFAULTS, clientsRange: "30-dias" })).toBe(
+      "period=last_30_days&compare=previous&service=all&granularity=day",
+    );
+    expect(toClientsStatsQuery({ ...DEFAULTS, clientsRange: "3-meses" })).toBe(
+      "period=last_3_months&compare=previous&service=all&granularity=day",
+    );
+    expect(toClientsStatsQuery({ ...DEFAULTS, clientsRange: "6-meses" })).toBe(
+      "period=last_6_months&compare=previous&service=all&granularity=week",
+    );
+    expect(toClientsStatsQuery({ ...DEFAULTS, clientsRange: "todo" })).toBe(
+      "period=all_time&compare=previous&service=all&granularity=week",
+    );
+  });
+
+  it("ignores periodo, comparar and agrupar", () => {
+    expect(
+      toClientsStatsQuery({
+        ...DEFAULTS,
+        period: "este-anio",
+        compare: "no",
+        granularity: "mes",
+        clientsRange: "30-dias",
+      }),
+    ).toBe("period=last_30_days&compare=previous&service=all&granularity=day");
+  });
+
+  it("sends the service", () => {
+    expect(toClientsStatsQuery({ ...DEFAULTS, service: "rehab" })).toContain("service=rehab");
   });
 });
 

@@ -30,6 +30,14 @@ export type ServiceParam = (typeof SERVICE_PARAMS)[keyof typeof SERVICE_PARAMS];
 export const GRANULARITY_PARAMS = { DAY: "dia", WEEK: "semana", MONTH: "mes" } as const;
 export type GranularityParam = (typeof GRANULARITY_PARAMS)[keyof typeof GRANULARITY_PARAMS];
 
+export const CLIENTS_RANGE_PARAMS = {
+  LAST_30_DAYS: "30-dias",
+  LAST_3_MONTHS: "3-meses",
+  LAST_6_MONTHS: "6-meses",
+  ALL: "todo",
+} as const;
+export type ClientsRangeParam = (typeof CLIENTS_RANGE_PARAMS)[keyof typeof CLIENTS_RANGE_PARAMS];
+
 /** What `/staff` shows, all of it in the URL: `/staff?vista=negocio&tab=turnos&periodo=este-anio`. */
 export interface DashboardParams {
   view: DashboardView;
@@ -40,6 +48,8 @@ export interface DashboardParams {
   compare: CompareParam;
   service: ServiceParam;
   granularity: GranularityParam | null;
+  /** Only the Clientes tab reads it: its own range, always ending today. */
+  clientsRange: ClientsRangeParam;
 }
 
 type RawParam = string | string[] | undefined;
@@ -48,6 +58,7 @@ const DEFAULT_TAB = DASHBOARD_TABS.PLATA;
 const DEFAULT_PERIOD = PERIOD_PARAMS.LAST_MONTH;
 const DEFAULT_COMPARE = COMPARE_PARAMS.PREVIOUS;
 const DEFAULT_SERVICE = SERVICE_PARAMS.ALL;
+const DEFAULT_CLIENTS_RANGE = CLIENTS_RANGE_PARAMS.LAST_6_MONTHS;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const firstOf = (value: RawParam): string | undefined => (Array.isArray(value) ? value[0] : value);
@@ -84,6 +95,7 @@ export function parseDashboardParams(raw: Record<string, RawParam>): DashboardPa
     compare: pick(COMPARE_PARAMS, raw.comparar, DEFAULT_COMPARE),
     service: pick(SERVICE_PARAMS, raw.servicio, DEFAULT_SERVICE),
     granularity,
+    clientsRange: pick(CLIENTS_RANGE_PARAMS, raw.rango, DEFAULT_CLIENTS_RANGE),
   };
 }
 
@@ -101,6 +113,7 @@ export function dashboardHref(params: DashboardParams): string {
     if (params.compare !== DEFAULT_COMPARE) search.set("comparar", params.compare);
     if (params.service !== DEFAULT_SERVICE) search.set("servicio", params.service);
     if (params.granularity) search.set("agrupar", params.granularity);
+    if (params.clientsRange !== DEFAULT_CLIENTS_RANGE) search.set("rango", params.clientsRange);
   }
   const qs = search.toString();
   return qs ? `${ROUTES.STAFF}?${qs}` : ROUTES.STAFF;
@@ -137,5 +150,24 @@ export function toStatsQuery(params: DashboardParams): string {
   search.set("compare", API_COMPARES[params.compare]);
   search.set("service", params.service === SERVICE_PARAMS.ALL ? "all" : params.service);
   if (params.granularity) search.set("granularity", API_GRANULARITIES[params.granularity]);
+  return search.toString();
+}
+
+const CLIENTS_RANGE_QUERIES: Record<ClientsRangeParam, { period: string; granularity: string }> = {
+  [CLIENTS_RANGE_PARAMS.LAST_30_DAYS]: { period: "last_30_days", granularity: "day" },
+  [CLIENTS_RANGE_PARAMS.LAST_3_MONTHS]: { period: "last_3_months", granularity: "day" },
+  [CLIENTS_RANGE_PARAMS.LAST_6_MONTHS]: { period: "last_6_months", granularity: "week" },
+  [CLIENTS_RANGE_PARAMS.ALL]: { period: "all_time", granularity: "week" },
+};
+
+/**
+ * The query of the Clientes tab: its range, always ending today, compared with the day before it starts.
+ * It ignores `periodo`, `comparar` and `agrupar`, which belong to Plata and Turnos.
+ */
+export function toClientsStatsQuery(params: DashboardParams): string {
+  const { period, granularity } = CLIENTS_RANGE_QUERIES[params.clientsRange];
+  const search = new URLSearchParams({ period, compare: "previous" });
+  search.set("service", params.service === SERVICE_PARAMS.ALL ? "all" : params.service);
+  search.set("granularity", granularity);
   return search.toString();
 }

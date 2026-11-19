@@ -17,7 +17,7 @@ describe("getClientsStats", () => {
     apiFetchServerMock.mockReset();
   });
 
-  it("asks the API with the URL period, comparison, service and grouping", async () => {
+  it("asks the API with the URL range, the service and the grouping of that range, and ignores the period menus", async () => {
     apiFetchServerMock.mockResolvedValue(Response.json(CLIENTS_STATS));
     const params = parseDashboardParams({
       vista: "negocio",
@@ -26,12 +26,13 @@ describe("getClientsStats", () => {
       comparar: "no",
       servicio: "performance",
       agrupar: "mes",
+      rango: "3-meses",
     });
 
     await expect(getClientsStats(params)).resolves.toEqual(CLIENTS_STATS);
 
     expect(apiFetchServerMock).toHaveBeenCalledWith(
-      "/api/v1/staff/dashboard/stats/clients?period=last_12_months&compare=none&service=performance&granularity=month",
+      "/api/v1/staff/dashboard/stats/clients?period=last_3_months&compare=previous&service=performance&granularity=day",
     );
   });
 

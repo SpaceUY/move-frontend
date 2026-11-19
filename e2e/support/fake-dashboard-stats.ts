@@ -24,7 +24,21 @@ const SERVICES: readonly ServiceType[] = ["performance", "rehab", "recovery"];
 // back), whatever day the tests run: "last month" compares with data and "last year" says "sin datos".
 const DATA_SINCE_MONTHS = { money: 8, slots: 6, clients: 7 } as const;
 
-const PERIODS = ["this_week", "this_month", "last_month", "this_year", "last_12_months", "custom"] as const;
+const PERIODS = [
+  "this_week",
+  "this_month",
+  "last_month",
+  "this_year",
+  "last_12_months",
+  "last_30_days",
+  "last_3_months",
+  "last_6_months",
+  "all_time",
+  "custom",
+] as const;
+
+// Where "all_time" starts, like HISTORY_START in the back: before it only the plans still active in 2026 were imported.
+const HISTORY_START = "2026-01-01";
 const COMPARES = ["previous", "last_year", "none"] as const;
 const GRANULARITIES: readonly StatsGranularity[] = ["day", "week", "month"];
 
@@ -99,6 +113,14 @@ function periodWindow(query: Query, today: string): DateRange | null {
       return { from: `${today.slice(0, 4)}-01-01`, to: today };
     case "last_12_months":
       return { from: addDays(shiftMonths(today, -12), 1), to: today };
+    case "last_30_days":
+      return { from: addDays(today, -29), to: today };
+    case "last_3_months":
+      return { from: addDays(shiftMonths(today, -3), 1), to: today };
+    case "last_6_months":
+      return { from: addDays(shiftMonths(today, -6), 1), to: today };
+    case "all_time":
+      return { from: HISTORY_START, to: today };
     case "custom": {
       const { from, to } = query;
       // The same checks as the back: both ends are dates, it does not end after today, it does not start after it
