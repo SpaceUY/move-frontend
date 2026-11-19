@@ -21,16 +21,16 @@ describe("ClientsListSection", () => {
   it("asks for what the URL says and shows the list", async () => {
     getClientsMock.mockResolvedValue(page);
 
-    render(await ClientsListSection({ params: { q: "", page: 1, status: "deactivated", expiringSoon: false } }));
+    render(await ClientsListSection({ params: { q: "", page: 1, status: "deactivated", expiringSoon: false, everyone: false } }));
 
-    expect(getClientsMock).toHaveBeenCalledWith({ q: "", page: 1, status: "deactivated", expiringSoon: false });
+    expect(getClientsMock).toHaveBeenCalledWith({ q: "", page: 1, status: "deactivated", expiringSoon: false, everyone: false });
     expect(screen.getByText("No hay clientes dados de baja")).toBeDefined();
   });
 
   it("shows an alert with a retry link to the same view when the API fails", async () => {
     getClientsMock.mockRejectedValue(new ApiError({ statusCode: 500, code: "INTERNAL", message: "x" }));
 
-    render(await ClientsListSection({ params: { q: "ana", page: 2, status: "active", expiringSoon: false } }));
+    render(await ClientsListSection({ params: { q: "ana", page: 2, status: "active", expiringSoon: false, everyone: false } }));
 
     expect(screen.getByRole("alert").textContent).toContain("No pudimos cargar la lista de clientes");
     expect(screen.getByRole("link", { name: "Reintentar" }).getAttribute("href")).toBe(

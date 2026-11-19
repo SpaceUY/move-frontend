@@ -15,8 +15,8 @@ export async function getClients(params: ClientsListParams): Promise<ClientPage>
       pageSize: CLIENTS_PAGE_SIZE,
       status: params.status,
       expiringSoon: params.expiringSoon,
-      // The "Activos" tab: not the deactivated list, and not "vence pronto" (which is already a subset of it).
-      activeNow: params.status === CLIENT_ACCOUNT_STATUSES.ACTIVE && !params.expiringSoon,
+      // Only the "Activos" tab: not the deactivated list, not "vence pronto" (already a subset of it), not "Todos".
+      activeNow: params.status === CLIENT_ACCOUNT_STATUSES.ACTIVE && !params.expiringSoon && !params.everyone,
     }),
   );
   return parseJsonOrThrow<ClientPage>(response);
