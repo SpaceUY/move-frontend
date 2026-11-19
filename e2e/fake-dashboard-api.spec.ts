@@ -227,6 +227,33 @@ test.describe("fake dashboard stats: Turnos and Clientes", () => {
     expect(rehab.body.renewal.current).toBeNull();
   });
 
+  test("Clientes accepts the four new ranges and returns series and active.previous", async ({ request }) => {
+    const today = businessDateFromToday(0);
+    const from = { last_30_days: addDays(today, -29), all_time: "2026-01-01" } as const;
+
+    for (const period of ["last_30_days", "last_3_months", "last_6_months", "all_time"] as const) {
+      const { status, body } = await stats<ClientsStatsDto>(request, "staff-dashboard", "clients", `?period=${period}&compare=previous`);
+
+      expect(status, period).toBe(200);
+      expect(body.meta.period.to, period).toBe(today);
+      expect(body.meta.period.inProgress, period).toBe(true);
+      expect(body.series.length, period).toBeGreaterThan(0);
+      if (period in from) expect(body.meta.period.from, period).toBe(from[period as keyof typeof from]);
+    }
+    // The data of the fake start seven months ago: the window before 30 days or 3 months has data, the one before 6 months does not.
+    for (const period of ["last_30_days", "last_3_months"]) {
+      const { body } = await stats<ClientsStatsDto>(request, "staff-dashboard", "clients", `?period=${period}&compare=previous`);
+
+      expect(body.meta.comparison?.hasData, period).toBe(true);
+      expect(body.active.previous, period).not.toBeNull();
+    }
+  });
+
+  test("all_time groups by week up to 400 days and by month after that", async () => {
+    expect(on<ClientsStatsDto>("2026-11-19", "clients", "?period=all_time&granularity=week").meta.granularity).toBe("week");
+    expect(on<ClientsStatsDto>("2027-03-01", "clients", "?period=all_time&granularity=week").meta.granularity).toBe("month");
+  });
+
   test("Turnos gives booked, offered, occupancy, a total per hour and a rate per cell, null when nothing was offered", async ({ request }) => {
     const all = await stats<SlotsStatsDto>(request, "staff-dashboard", "slots");
     const rehab = await stats<SlotsStatsDto>(request, "staff-dashboard", "slots", "?service=rehab");
