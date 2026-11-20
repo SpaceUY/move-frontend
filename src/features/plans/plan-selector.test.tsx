@@ -9,7 +9,6 @@ const option = ({ id = "id", ...overrides }: Partial<SelectorOption>): SelectorO
   name: "Plan Mensual",
   price: "$ 3.900",
   features: [],
-  includes: null,
   featured: false,
   actionLabel: "Contratar",
   actionHref: `/checkout/plan/${id}`,
@@ -25,14 +24,14 @@ const options: SelectorOption[] = [
     id: "trimestral",
     name: "Plan Trimestral",
     price: "$ 10.500",
-    includes: "Todo lo del Plan Mensual + ahorrás un 10%",
+    features: ["Asistencias ilimitadas", "Ahorrás un 10%"],
     featured: true,
   }),
   option({
     id: "semestral",
     name: "Plan Semestral",
     price: "$ 19.800",
-    includes: "Todo lo del Plan Mensual + ahorrás un 15%",
+    features: ["Asistencias ilimitadas", "Ahorrás un 15%"],
   }),
 ];
 
@@ -58,13 +57,13 @@ describe("PlanSelector", () => {
     expect(screen.getByText("Entrenamiento semi personalizado.")).toBeDefined();
   });
 
-  it("lists the benefits of the first plan and what the others add to it", () => {
+  it("lists the features of every plan, not only the first", () => {
     renderSelector();
 
     expect(screen.getByText("Reserva y cancelación online")).toBeDefined();
     expect(screen.getByText("Historial de entrenamiento")).toBeDefined();
-    expect(screen.getByText("Todo lo del Plan Mensual + ahorrás un 10%")).toBeDefined();
-    expect(screen.getByText("Todo lo del Plan Mensual + ahorrás un 15%")).toBeDefined();
+    expect(screen.getByText("Ahorrás un 10%")).toBeDefined();
+    expect(screen.getByText("Ahorrás un 15%")).toBeDefined();
   });
 
   it("starts on the featured plan and links its checkout", () => {
