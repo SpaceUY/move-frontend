@@ -42,13 +42,24 @@ describe("ClientesSection", () => {
     expect(getClientsStatsMock).toHaveBeenCalledWith(params);
   });
 
-  it("opens with the period note and the question", async () => {
+  it("opens with the range and what counts as active, and the question", async () => {
     getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
 
     render(await ClientesSection({ params: PARAMS }));
 
-    expect(screen.getByText("1 oct – 31 oct · comparado con 1 sep – 30 sep · Datos de clientes desde 12 mar 2026 (el primer plan o compra)")).toBeDefined();
+    expect(screen.getByText("1 oct – 31 oct · Clientes con plan o reserva suelta ese día")).toBeDefined();
     expect(screen.getByRole("heading", { name: "¿Crecemos o perdemos gente, y por qué?" })).toBeDefined();
+  });
+
+  it("does not render the period menus, the comparison note or the grouping links", async () => {
+    getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
+
+    render(await ClientesSection({ params: PARAMS }));
+
+    expect(screen.queryByText(/período anterior/i)).toBeNull();
+    expect(screen.queryByText(/comparado con/)).toBeNull();
+    expect(screen.queryByRole("group", { name: "Agrupar por" })).toBeNull();
+    expect(screen.queryByRole("combobox")).toBeNull();
   });
 
   it("names the service in the question when the filter is on", async () => {
@@ -59,16 +70,27 @@ describe("ClientesSection", () => {
     expect(screen.getByRole("heading", { name: "¿Crecemos o perdemos gente, y por qué? · Recovery" })).toBeDefined();
   });
 
-  it("active clients shows the joins and the leaves of the period next to how the number moved", async () => {
+  it('labels the first tile "Clientes activos hoy" and shows the delta next to the leaves note', async () => {
     getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
 
     render(await ClientesSection({ params: PARAMS }));
 
-    const active = screen.getByRole("heading", { name: "Clientes activos" }).closest("article")!;
+    const active = screen.getByRole("heading", { name: "Clientes activos hoy" }).closest("article")!;
     expect(within(active).getByText("84")).toBeDefined();
     expect(within(active).getByText("+9 altas").className).toContain("text-success");
     expect(within(active).getByText("−4 bajas").className).toContain("text-danger");
-    expect(within(active).getByText("▲ 6%")).toBeDefined();
+    // 84 against 79 the day before the range starts: the plain difference, not a percentage.
+    expect(within(active).getByText("▲ 5").className).toContain("text-success");
+    expect(within(active).getByText("vs hace 6 meses")).toBeDefined();
+    expect(within(active).queryByText(/%/)).toBeNull();
+  });
+
+  it("the delta follows the range of the URL", async () => {
+    getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
+
+    render(await ClientesSection({ params: parseDashboardParams({ vista: "negocio", tab: "clientes", rango: "30-dias" }) }));
+
+    expect(screen.getByText("vs hace 30 días")).toBeDefined();
   });
 
   it("renewal line shows pending when some plans are still in grace", async () => {
@@ -79,7 +101,7 @@ describe("ClientesSection", () => {
     const renewal = screen.getByRole("heading", { name: "Renovación" }).closest("article")!;
     expect(within(renewal).getByText("68%")).toBeDefined();
     expect(within(renewal).getByText("17 de 25 · 4 en curso")).toBeDefined();
-    expect(within(renewal).getByText("▲ 3 pts")).toBeDefined();
+    expect(within(renewal).queryByText(/pts/)).toBeNull();
   });
 
   it("renewal line leaves en curso out when nothing is pending", async () => {
@@ -106,7 +128,7 @@ describe("ClientesSection", () => {
     expect(within(renewal).queryByText(/NaN|0%/)).toBeNull();
   });
 
-  it("paused is good news when it goes down", async () => {
+  it("paused shows the count of today with no comparison", async () => {
     getClientsStatsMock.mockResolvedValue({
       ...CLIENTS_STATS,
       paused: { current: 12, previous: 16, change: -25, changeUnit: "percent" },
@@ -116,11 +138,11 @@ describe("ClientesSection", () => {
 
     const paused = screen.getByRole("heading", { name: "En pausa" }).closest("article")!;
     expect(within(paused).getByText("12")).toBeDefined();
-    expect(within(paused).getByText("▼ 25%").className).toContain("text-success");
     expect(within(paused).getByText("no son bajas")).toBeDefined();
+    expect(within(paused).queryByText(/%|▼|▲/)).toBeNull();
   });
 
-  it("says sin datos para comparar and never prints NaN when the comparison has no data", async () => {
+  it("keeps the tile without delta when the API has no comparison data", async () => {
     const nothing = { previous: null, change: null } as const;
     getClientsStatsMock.mockResolvedValue({
       ...CLIENTS_STATS,
@@ -133,7 +155,25 @@ describe("ClientesSection", () => {
 
     render(await ClientesSection({ params: PARAMS }));
 
-    expect(screen.getAllByText("sin datos para comparar")).toHaveLength(3);
+    const active = screen.getByRole("heading", { name: "Clientes activos hoy" }).closest("article")!;
+    expect(within(active).getByText("84")).toBeDefined();
+    expect(within(active).queryByText(/vs hace/)).toBeNull();
+    expect(screen.queryByText("sin datos para comparar")).toBeNull();
+    expect(screen.queryByText(/NaN|Infinity/)).toBeNull();
+  });
+
+  it("Rehab: renewal is a dash and nothing breaks when the API sends no comparison", async () => {
+    getClientsStatsMock.mockResolvedValue({
+      ...CLIENTS_STATS,
+      meta: { ...CLIENTS_STATS.meta, comparison: null },
+      renewal: { current: null, previous: null, change: null, changeUnit: "points", renewed: 0, due: 0, pending: 0 },
+      renewalByService: [],
+    });
+
+    render(await ClientesSection({ params: parseDashboardParams({ vista: "negocio", tab: "clientes", servicio: "rehab" }) }));
+
+    const renewal = screen.getByRole("heading", { name: "Renovación" }).closest("article")!;
+    expect(within(renewal).getAllByText("—").length).toBeGreaterThan(0);
     expect(screen.queryByText(/NaN|Infinity/)).toBeNull();
   });
 
@@ -145,13 +185,31 @@ describe("ClientesSection", () => {
     const card = screen.getByRole("heading", { name: "Activos, altas y bajas por semana" }).closest("section")!;
     expect(
       await within(card).findByRole("img", {
-        name: "Clientes activos por semana del 1 oct 2026 al 31 oct 2026: 84 al final, ▲ 6% vs período anterior. Los datos exactos están en Ver datos.",
+        name: "Clientes activos por semana del 1 oct 2026 al 31 oct 2026: 84 al final, ▲ 5 vs hace 6 meses. Los datos exactos están en Ver datos.",
       }),
     ).toBeDefined();
     const data = within(card).getByRole("table", { name: "Activos, altas y bajas por semana" });
     expect(within(data).getByText("1 oct – 4 oct")).toBeDefined();
     expect(within(data).getAllByRole("row")).toHaveLength(5);
-    expect(within(card).getByRole("link", { name: "Mes" }).getAttribute("href")).toBe("/staff?vista=negocio&tab=clientes&agrupar=mes");
+  });
+
+  it("the chart gets no previous line and the data table has no previous column", async () => {
+    getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
+
+    render(await ClientesSection({ params: PARAMS }));
+
+    const card = screen.getByRole("heading", { name: "Activos, altas y bajas por semana" }).closest("section")!;
+    expect(within(card).queryByRole("link")).toBeNull();
+    const legend = within(card).getByRole("list", { name: "Referencias del gráfico" });
+    expect(within(legend).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Activos", "Altas", "Bajas", "Bajas en curso"]);
+    const table = within(card).getByRole("table", { name: "Activos, altas y bajas por semana" });
+    expect(within(table).getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
+      "Semana",
+      "Activos",
+      "Altas",
+      "Bajas",
+      "Bajas en curso",
+    ]);
   });
 
   it("the data table of the clients chart has a Bajas en curso column with the API values", async () => {
@@ -329,7 +387,7 @@ describe("ClientesSection", () => {
     getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
 
     render(await ClientesSection({ params: PARAMS }));
-    await userEvent.click(screen.getByRole("button", { name: "Qué significa Clientes activos" }));
+    await userEvent.click(screen.getByRole("button", { name: "Qué significa Clientes activos hoy" }));
     await userEvent.click(screen.getByRole("button", { name: "Qué significa Renovación" }));
 
     expect(screen.getByText(/los desactivados y los packs agotados no/)).toBeDefined();
@@ -340,7 +398,7 @@ describe("ClientesSection", () => {
     getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
 
     render(await ClientesSection({ params: PARAMS }));
-    await userEvent.click(screen.getByRole("button", { name: "Qué significa Clientes activos" }));
+    await userEvent.click(screen.getByRole("button", { name: "Qué significa Clientes activos hoy" }));
 
     expect(screen.getByText(/una clase suelta reservada por el staff \(confirmada\)/)).toBeDefined();
     expect(screen.queryByText(/cobrada/)).toBeNull();
@@ -364,7 +422,7 @@ describe("ClientesSection", () => {
 
     render(await ClientesSection({ params: parseDashboardParams({ vista: "negocio", tab: "clientes", servicio: "rehab" }) }));
 
-    const active = screen.getByRole("heading", { name: "Clientes activos" }).closest("article")!;
+    const active = screen.getByRole("heading", { name: "Clientes activos hoy" }).closest("article")!;
     expect(within(active).getByText("— bajas")).toBeDefined();
     expect(within(active).getByText("+9 altas")).toBeDefined();
     expect(within(active).queryByText(/−—/)).toBeNull();
@@ -396,7 +454,7 @@ describe("ClientesSection", () => {
 
     render(await ClientesSection({ params: PARAMS }));
 
-    const active = screen.getByRole("heading", { name: "Clientes activos" }).closest("article")!;
+    const active = screen.getByRole("heading", { name: "Clientes activos hoy" }).closest("article")!;
     expect(within(active).getByText(/5 en curso/)).toBeDefined();
     expect(within(active).getByText(/1 dada de baja por el staff/)).toBeDefined();
   });
@@ -405,7 +463,7 @@ describe("ClientesSection", () => {
     getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
 
     render(await ClientesSection({ params: PARAMS }));
-    await userEvent.click(screen.getByRole("button", { name: "Qué significa Clientes activos" }));
+    await userEvent.click(screen.getByRole("button", { name: "Qué significa Clientes activos hoy" }));
 
     expect(screen.getByText(/Bajas: clientes cuyo plan venció en el período y ya pasaron los días de gracia sin renovar/)).toBeDefined();
     expect(screen.getByText(/Dadas de baja por el staff: cuentas que el staff desactivó en el período; no se cuentan también como bajas/)).toBeDefined();
@@ -415,7 +473,7 @@ describe("ClientesSection", () => {
     getClientsStatsMock.mockResolvedValue(CLIENTS_STATS);
 
     const { container } = render(await ClientesSection({ params: PARAMS }));
-    await userEvent.click(screen.getByRole("button", { name: "Qué significa Clientes activos" }));
+    await userEvent.click(screen.getByRole("button", { name: "Qué significa Clientes activos hoy" }));
 
     expect(container.textContent).toContain(ACTIVE_CLIENT_INFO);
   });
@@ -438,7 +496,7 @@ describe("ClientesSection", () => {
 
     render(await ClientesSection({ params: PARAMS }));
 
-    const active = screen.getByRole("heading", { name: "Clientes activos" }).closest("article")!;
+    const active = screen.getByRole("heading", { name: "Clientes activos hoy" }).closest("article")!;
     expect(within(active).getByText("— altas")).toBeDefined();
     expect(within(active).getByText("−4 bajas")).toBeDefined();
   });

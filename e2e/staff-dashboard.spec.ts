@@ -133,8 +133,8 @@ test.describe("Staff dashboard: Negocio", () => {
 
     await page.getByRole("navigation", { name: "Secciones de Negocio" }).getByRole("link", { name: "Clientes" }).click();
 
-    await expect(tile(page, "Clientes activos")).toContainText("84");
-    await expect(tile(page, "Clientes activos")).toContainText("+9 altas / −4 bajas");
+    await expect(tile(page, "Clientes activos hoy")).toContainText("84");
+    await expect(tile(page, "Clientes activos hoy")).toContainText("+9 altas / −4 bajas");
     await expect(tile(page, "Renovación")).toContainText("17 de 25 · 4 en curso");
     await expect(page.getByRole("heading", { name: "Activos, altas y bajas por semana" })).toBeVisible();
     const byService = page.locator("section").filter({ has: page.getByRole("heading", { name: "Renovación por servicio" }) });
@@ -147,12 +147,35 @@ test.describe("Staff dashboard: Negocio", () => {
     await expect(page.locator("section").filter({ has: page.getByRole("heading", { name: "Por qué pausan" }) })).toContainText("Lesión");
   });
 
+  test("Clientes: range buttons replace the period menus", async ({ page, baseURL }) => {
+    await actAsStaff(page, baseURL!, "staff-dashboard");
+    await page.goto("/staff?vista=negocio&tab=clientes");
+
+    await expect(page.getByRole("combobox", { name: "Período" })).toHaveCount(0);
+    await expect(page.getByRole("combobox", { name: "Comparar con" })).toHaveCount(0);
+    await expect(page.getByRole("group", { name: "Agrupar por" })).toHaveCount(0);
+    const range = page.getByRole("group", { name: "Rango" });
+    await expect(range.getByRole("link", { name: "6 meses" })).toHaveAttribute("aria-current", "page");
+
+    await range.getByRole("link", { name: "3 meses" }).click();
+    await expect(page).toHaveURL(/rango=3-meses/);
+    await expect(page.getByRole("heading", { name: "Activos, altas y bajas por día" })).toBeVisible();
+
+    await page.getByRole("group", { name: "Servicio" }).getByRole("link", { name: "Rehab" }).click();
+    await expect(page.getByRole("heading", { name: "¿Crecemos o perdemos gente, y por qué? · Rehab" })).toBeVisible();
+    expect(query(page)).toEqual({ vista: "negocio", tab: "clientes", rango: "3-meses", servicio: "rehab" });
+
+    await page.getByRole("navigation", { name: "Secciones de Negocio" }).getByRole("link", { name: "Plata" }).click();
+    await expect(page.getByRole("combobox", { name: "Período" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Rango" })).toHaveCount(0);
+  });
+
   test("Clientes with Rehab has no bajas to count: a dash with no sign, and no renewal", async ({ page, baseURL }) => {
     await actAsStaff(page, baseURL!, "staff-dashboard");
     await page.goto("/staff?vista=negocio&tab=clientes&servicio=rehab");
 
-    await expect(tile(page, "Clientes activos")).toContainText("— bajas");
-    await expect(tile(page, "Clientes activos")).not.toContainText("−—");
+    await expect(tile(page, "Clientes activos hoy")).toContainText("— bajas");
+    await expect(tile(page, "Clientes activos hoy")).not.toContainText("−—");
     await expect(page.getByText("Rehab no tiene planes, así que no tiene renovación.")).toBeVisible();
   });
 

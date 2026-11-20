@@ -5,6 +5,7 @@ import { todayBusinessDate } from "@/features/bookings";
 
 import { dashboardHref, DASHBOARD_TABS, type DashboardParams } from "../dashboard-params";
 import { ClientesSection } from "./clientes/clientes-section";
+import { ClientsRangeControls } from "./clientes/clients-range-controls";
 import { NegocioTabs } from "./negocio-tabs";
 import { PeriodControls } from "./period-controls";
 import { PlataSection } from "./plata/plata-section";
@@ -27,7 +28,7 @@ function TabSkeleton() {
 }
 
 /**
- * Negocio: tabs, period and service on top, the active tab below. The controls are not inside the `Suspense`,
+ * Negocio: tabs, period (or the range, on Clientes) and service on top, the active tab below. The controls are not inside the `Suspense`,
  * so they stay put (and keep their focus) while the numbers reload. The `Suspense` is keyed on the href: when a
  * filter changes the skeleton comes back instead of the old numbers staying under a new filter.
  */
@@ -36,7 +37,11 @@ export function NegocioView({ params }: { params: DashboardParams }) {
     <div className="grid gap-4">
       <NegocioTabs params={params} />
       <div className="flex flex-wrap items-end gap-x-3.5 gap-y-2.5 rounded border border-line bg-card px-3.5 py-3">
-        <PeriodControls params={params} today={todayBusinessDate()} />
+        {params.tab === DASHBOARD_TABS.CLIENTES ? (
+          <ClientsRangeControls params={params} />
+        ) : (
+          <PeriodControls params={params} today={todayBusinessDate()} />
+        )}
         <ServiceFilter params={params} />
       </div>
       <Suspense key={dashboardHref(params)} fallback={<TabSkeleton />}>

@@ -7,7 +7,7 @@ import type { ClientsListParams } from "./clients-list-params";
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 
-const ACTIVE: ClientsListParams = { q: "", page: 1, status: "active", expiringSoon: false };
+const ACTIVE: ClientsListParams = { q: "", page: 1, status: "active", expiringSoon: false, everyone: false };
 
 // Fake timers drive the debounce deterministically.
 async function advance(ms: number) {
@@ -45,7 +45,7 @@ describe("ClientsSearchField", () => {
   });
 
   it("keeps the chosen filter and goes back to page 1", async () => {
-    render(<ClientsSearchField params={{ q: "", page: 4, status: "deactivated", expiringSoon: false }} />);
+    render(<ClientsSearchField params={{ q: "", page: 4, status: "deactivated", expiringSoon: false, everyone: false }} />);
 
     fireEvent.change(input(), { target: { value: "ana" } });
     await advance(400);

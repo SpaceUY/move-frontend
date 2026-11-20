@@ -45,7 +45,7 @@ function toServiceEntries(
     const result = results[index];
     if (result.status === "rejected") return [{ service, failed: true }];
 
-    const options = presentSelectorPlans(service, result.value, { reserveHref });
+    const options = presentSelectorPlans(result.value, { reserveHref });
     return options.length > 0 ? [{ service, failed: false, options }] : [];
   });
 }

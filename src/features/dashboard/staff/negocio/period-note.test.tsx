@@ -53,12 +53,6 @@ describe("PeriodNote", () => {
     expect(screen.getByText(/Datos de turnos desde 12 mar 2026 \(el primer turno\)/)).toBeDefined();
   });
 
-  it("says Datos de clientes desde 12 mar 2026 on the Clientes tab, with why: the first plan or booking", () => {
-    render(<PeriodNote meta={META} source="clientes" />);
-
-    expect(screen.getByText(/Datos de clientes desde 12 mar 2026 \(el primer plan o compra\)/)).toBeDefined();
-  });
-
   it("writes nothing about data when dataSince is null", () => {
     render(<PeriodNote meta={{ ...META, dataSince: null }} source="turnos" />);
 

@@ -94,12 +94,9 @@ export function PlanSelector({ id, label, caption, title, description, options }
             <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-neutral-600 peer-checked:border-white peer-checked:bg-white peer-checked:shadow-[inset_0_0_0_3px_var(--color-card)]" />
             <span className="min-w-0">
               <span className="block text-sm font-semibold">{option.name}</span>
-              {option.includes ? (
-                <span className="mt-0.5 block text-xs text-muted">{option.includes}</span>
-              ) : null}
             </span>
             <span className="whitespace-nowrap font-display text-xl font-black">{option.price}</span>
-            {option.includes ? null : (
+            {option.features.length > 0 ? (
               // On a phone the benefits take the card's full width in two columns; from sm up they sit under the name.
               <ul className="col-span-3 mt-3 columns-2 gap-x-4 text-xs text-muted sm:col-span-1 sm:col-start-2 sm:mt-2 sm:columns-1">
                 {option.features.map((feature) => (
@@ -109,7 +106,7 @@ export function PlanSelector({ id, label, caption, title, description, options }
                   </li>
                 ))}
               </ul>
-            )}
+            ) : null}
           </label>
         ))}
       </div>

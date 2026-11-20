@@ -11,7 +11,6 @@ function formatRange({ from, to }: StatsWindowDto, withYear: boolean): string {
 const SOURCES = {
   plata: "Datos de plata desde {date} (el primer cobro registrado)",
   turnos: "Datos de turnos desde {date} (el primer turno)",
-  clientes: "Datos de clientes desde {date} (el primer plan o compra)",
 } as const;
 
 export type PeriodNoteSource = keyof typeof SOURCES;

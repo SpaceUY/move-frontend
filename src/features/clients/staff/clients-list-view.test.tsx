@@ -6,8 +6,8 @@ import type { ClientPage, ClientRow } from "@/lib/api/types";
 import type { ClientsListParams } from "./clients-list-params";
 import { ClientsListSkeleton, ClientsListView } from "./clients-list-view";
 
-const ACTIVE: ClientsListParams = { q: "", page: 1, status: "active", expiringSoon: false };
-const DEACTIVATED: ClientsListParams = { q: "", page: 1, status: "deactivated", expiringSoon: false };
+const ACTIVE: ClientsListParams = { q: "", page: 1, status: "active", expiringSoon: false, everyone: false };
+const DEACTIVATED: ClientsListParams = { q: "", page: 1, status: "deactivated", expiringSoon: false, everyone: false };
 
 function pageOf(overrides: Partial<ClientPage> = {}): ClientPage {
   return { items: [], total: 0, page: 1, pageSize: 20, ...overrides };
@@ -91,7 +91,7 @@ describe("ClientsListView", () => {
   it("paginates with links that keep the search and the filter", () => {
     render(
       <ClientsListView
-        params={{ q: "ana", page: 2, status: "deactivated", expiringSoon: false }}
+        params={{ q: "ana", page: 2, status: "deactivated", expiringSoon: false, everyone: false }}
         data={pageOf({ items: [rowOf()], total: 45, page: 2 })}
       />,
     );
@@ -111,7 +111,7 @@ describe("ClientsListView", () => {
   });
 
   it("shows a clear empty state, with a way back, when the search has no matches", () => {
-    render(<ClientsListView params={{ q: "xyz123", page: 1, status: "active", expiringSoon: false }} data={pageOf()} />);
+    render(<ClientsListView params={{ q: "xyz123", page: 1, status: "active", expiringSoon: false, everyone: false }} data={pageOf()} />);
 
     expect(screen.getByText("Ningún cliente coincide con la búsqueda")).toBeDefined();
     expect(screen.getByText("No encontramos resultados para «xyz123» entre los clientes activos.")).toBeDefined();
@@ -149,6 +149,30 @@ describe("ClientsListView", () => {
     render(<ClientsListView params={expiring} data={pageOf({ items: [rowOf()], total: 3 })} />);
 
     expect(screen.getByText("3 clientes vencen pronto.")).toBeDefined();
+  });
+
+  it("counts every registered client in the Todos tab", () => {
+    const everyone = { ...ACTIVE, everyone: true };
+    const { unmount } = render(<ClientsListView params={everyone} data={pageOf({ items: [rowOf()], total: 1 })} />);
+
+    expect(screen.getByText("1 cliente registrado.")).toBeDefined();
+    unmount();
+
+    render(<ClientsListView params={everyone} data={pageOf({ items: [rowOf()], total: 730 })} />);
+
+    expect(screen.getByText("730 clientes registrados.")).toBeDefined();
+  });
+
+  it("keeps the first-use empty state, and a search without the active-only wording, in the Todos tab", () => {
+    const everyone = { ...ACTIVE, everyone: true };
+    const { unmount } = render(<ClientsListView params={everyone} data={pageOf()} />);
+
+    expect(screen.getByText("Todavía no hay clientes")).toBeDefined();
+    unmount();
+
+    render(<ClientsListView params={{ ...everyone, q: "xyz123" }} data={pageOf()} />);
+
+    expect(screen.getByText("No encontramos resultados para «xyz123».")).toBeDefined();
   });
 
   it("says there are no active clients, and what makes one, when the active list is empty", () => {

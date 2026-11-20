@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { parseDashboardParams } from "../dashboard-params";
+import { ClientsRangeControls } from "./clientes/clients-range-controls";
 import { NegocioTabs } from "./negocio-tabs";
 import { PeriodControls } from "./period-controls";
 import { ServiceFilter } from "./service-filter";
@@ -76,6 +77,24 @@ describe("NegocioView", () => {
 
     expect(screen.getByText("Sección Turnos")).toBeDefined();
     expect(screen.queryByText("Sección Plata")).toBeNull();
+  });
+
+  it("shows the range buttons and no period menus on Clientes", () => {
+    const tree = NegocioView({ params: parseDashboardParams({ vista: "negocio", tab: "clientes" }) });
+
+    expect(containsType(tree, ClientsRangeControls)).toBe(true);
+    expect(containsType(tree, PeriodControls)).toBe(false);
+    expect(containsType(tree, ServiceFilter)).toBe(true);
+  });
+
+  it("keeps PeriodControls on Plata and Turnos", () => {
+    for (const tab of ["plata", "turnos"]) {
+      const tree = NegocioView({ params: parseDashboardParams({ vista: "negocio", tab }) });
+
+      expect(containsType(tree, PeriodControls)).toBe(true);
+      expect(containsType(tree, ClientsRangeControls)).toBe(false);
+      expect(containsType(tree, ServiceFilter)).toBe(true);
+    }
   });
 
   it("shows the Clientes section when the tab is clientes, and only that one", () => {
